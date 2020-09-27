@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <mpi.h>
+#include <iostream>
 
 
 unsigned long long compute_single(unsigned long long x, unsigned long long r_square){
@@ -21,9 +22,14 @@ int main(int argc, char** argv) {
 
 	int pid, np;
 	unsigned long long elements_per_process, sub_start, r_squre; 
+    
+    // pre-calculation
+    r_squre = r*r;
+    // elements_per_process =  floorl(r + np - 1) / np; 
+
     // np -> number of processes 
     // pid -> process id 
-  
+
     MPI_Status status; 
     // Creation of parallel processes 
     MPI_Init(&argc, &argv); 
@@ -35,26 +41,25 @@ int main(int argc, char** argv) {
 	// master process 
     if (pid == 0) { 
         int i; 
-        elements_per_process =  floorl(r + np - 1) / np; 
-		r_squre = r*r;
-  
+        
+        // r_squre = r*r;
+        elements_per_process =  (r + np - 1) / np; 
+
+
         // check if more than 1 processes are run 
         if (np > 1) { 
             // distributes the necessary information for each processor
-            for (i = 1; i < np - 1; i++) { 
+            for (i = 1; i < np ; ++i) { 
                 sub_start = i * elements_per_process; 
   
                 MPI_Send(&elements_per_process, 
                          1, 
 						 MPI_UNSIGNED_LONG_LONG, i, 0, 
                          MPI_COMM_WORLD); 
+
                 MPI_Send(&sub_start, 
                          1, 
                          MPI_UNSIGNED_LONG_LONG, i, 1, 
-                         MPI_COMM_WORLD); 
-				MPI_Send(&r_squre, 
-                         1, 
-                         MPI_UNSIGNED_LONG_LONG, i, 2, 
                          MPI_COMM_WORLD); 
             } 
         } 
@@ -64,6 +69,7 @@ int main(int argc, char** argv) {
         for (i = 0; i < elements_per_process; ++i) {
 			sum += compute_single(i, r_squre);
 		}
+        sum %= k;
   
         // collects partial sums from other processes 
         unsigned long long tmp; 
@@ -74,10 +80,11 @@ int main(int argc, char** argv) {
                      &status); 
             int sender = status.MPI_SOURCE; 
             sum += tmp; 
+            sum %= k;
         } 
-  
+
         // prints the final sum of pixels 
-		printf("%llu\n", (4 * sum) % k);
+		printf("%llu\n", (sum << 2) % k);
     } 
     // slave processes 
     else { 
@@ -93,20 +100,15 @@ int main(int argc, char** argv) {
                  MPI_COMM_WORLD, 
                  &status); 
 
-		MPI_Recv(&r_squre, 
-                 1, 
-				 MPI_UNSIGNED_LONG_LONG, 0, 2, 
-                 MPI_COMM_WORLD, 
-                 &status); 
-  
         // calculates its partial sum of pixel
         unsigned long long partial_sum = 0; 
 		unsigned long long sub_end = sub_start + elements_per_process;
-		if (sub_end > r) { sub_end = r; }
+		if (pid == (np-1)) { sub_end = r; }
         
 		// subtask
-		for (unsigned long long i = sub_start; i < sub_end; ++i) 
+		for (unsigned long long i = sub_start; i < sub_end; ++i) {
             partial_sum += compute_single(i, r_squre); 
+        }
   
         // sends the partial sum to the root process 
         MPI_Send(&partial_sum, 1, MPI_UNSIGNED_LONG_LONG, 
@@ -118,3 +120,10 @@ int main(int argc, char** argv) {
   
     return 0; 
 }
+
+
+// nproc=12
+// r=4294967295
+// k=1099511627775
+// answer=576603832986
+// timelimit=20
