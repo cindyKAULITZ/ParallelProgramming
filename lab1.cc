@@ -5,7 +5,7 @@
 
 
 unsigned long long compute_single(unsigned long long x, unsigned long long r_square){
-	unsigned long long y = ceil(sqrtl(r_square - (x*x));
+	unsigned long long y = ceil(sqrtl(r_square - (x*x)));
 	return y; 
 }
 
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
         // own calculation of master process 
         unsigned long long sum = 0; 
         for (i = 0; i < elements_per_process; ++i) {
-			sum += compute_single(i, r_squre)
+			sum += compute_single(i, r_squre);
 		}
   
         // collects partial sums from other processes 
