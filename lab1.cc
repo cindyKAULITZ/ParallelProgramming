@@ -2,13 +2,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <mpi.h>
-// unsigned long long compute_single(unsigned long long x, unsigned long long r){
-// 	unsigned long long y = ceil(sqrtl(r*r - (x)*(x)));
-// 	// x += 1;
-// 	// printf("x = %f\n", x);
-// 	// printf("y = %f\n", y);
-// 	return y; 
-// }
+unsigned long long compute_single(unsigned long long x, unsigned long long r_square){
+	// unsigned long long y = 
+	return ceil(sqrtl(r_square - (x)*(x))); 
+}
 
 int main(int argc, char** argv) {
 	if (argc != 3) {
@@ -34,22 +31,22 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-	start = MPI_Wtime();
+	// start = MPI_Wtime();
 	batch = ((r-1)/(size))+1;
 	
 	unsigned long long sub_start = (unsigned long long)rank * batch;
 	unsigned long long sub_end = sub_start + batch;
 	if (sub_end > r) { sub_end = r;}
 	for(unsigned long long ele_count = sub_start; ele_count < sub_end; ele_count++){
-		pixels_single += ceil(sqrtl(r_square - ele_count*ele_count));
-		pixels_single %= k;
+		pixels_single += compute_single(ele_count, r_square);
 	}
+	pixels_single %= k;
 
 	MPI_Reduce(&pixels_single, &pixels, 1,MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-	end = MPI_Wtime();
+	// end = MPI_Wtime();
 	if(rank == 0){
-		printf("%llu\n", (pixels<<2) % k);
-		printf("%f\n", end-start);
+		printf("%llu\n", (pixels*4) % k);
+		// printf("%f\n", end-start);
 	}
 	MPI_Finalize();
 }
