@@ -9,7 +9,7 @@
   - ![](https://i.imgur.com/S7YFQOb.png)
 
 ## HW1
--[HW1-spec](https://docs.google.com/document/d/1DwfAI_8m9obhJLDkiBwKLvBE7xIDX98bppFFWsFzo38/edit)
--[ScoreBoard](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/hw1/)
+- [HW1-spec](https://docs.google.com/document/d/1DwfAI_8m9obhJLDkiBwKLvBE7xIDX98bppFFWsFzo38/edit)
+- [ScoreBoard](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/hw1/)
 - TestCase: /home/pp20/share/hw1/testcases
 - Makefile: /home/pp20/share/hw1/Makefile
