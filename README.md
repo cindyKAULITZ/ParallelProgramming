@@ -21,6 +21,6 @@
 - [spec](https://docs.google.com/document/d/1DwfAI_8m9obhJLDkiBwKLvBE7xIDX98bppFFWsFzo38/edit?usp=sharing)
 - [scoreboard](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/hw1/)
 
-### hw2 Mandelbrot Set (==DeadLine : 11/16 23:59==)
+### hw2 Mandelbrot Set (**DeadLine : 11/16 23:59**)
 - [spec]( https://drive.google.com/file/d/1JKrz0BzqKlvLGJ0J-dNEOISAZA7jRhgO/view?usp=sharing)
 - [scoreboard]()
