@@ -30,22 +30,22 @@ void OddEvenSort(float arr[], int n) {
 
 
 
-unsigned long long global_index(unsigned long long rank, unsigned long long k_idx, unsigned long long size) {
+int global_index(int rank, int k_idx, int size) {
 	return rank*2 + k_idx*size*2;
 }
 
 
 // even_sort
-int EvenSort(float arr[], unsigned long long set_pos[], unsigned long long global_index_arr[], unsigned long long k, unsigned long long rank, unsigned long long size, unsigned long long n) {
+int EvenSort(float arr[], int set_pos[], int global_index_arr[], int k, int rank, int size, int n) {
 
 	static bool init = false;
 	// static int global_set_boundary = n/2 - 1;
 
 	int change = 0;
-	for (unsigned long long i = 0; i < k; i++) {
-		unsigned long long idx = set_pos[i];
-		unsigned long long global_idx = global_index_arr[i];
-		unsigned long long global_set = i * size + rank;
+	for (int i = 0; i < k; i++) {
+		int idx = set_pos[i];
+		int global_idx = global_index_arr[i];
+		int global_set = i * size + rank;
 
 		if (init) {
 			if (global_set > 0) {
@@ -77,16 +77,16 @@ int EvenSort(float arr[], unsigned long long set_pos[], unsigned long long globa
 
 
 // odd_sort
-int OddSort(float arr[], unsigned long long set_pos[], unsigned long long global_index_arr[], unsigned long long k, unsigned long long rank, unsigned long long size, unsigned long long n) {
+int OddSort(float arr[], int set_pos[], int global_index_arr[], int k, int rank, int size, int n) {
 	static int global_set_boundary = (size*k)-1;
 	// static int global_set_boundary = n/2 -1;
 
 	int change = 0;
 
-	for (unsigned long long i = 0; i < k; i++) {
-		unsigned long long idx = set_pos[i];
-		unsigned long long global_idx = global_index_arr[i];
-		unsigned long long global_set = i * size + rank;
+	for (int i = 0; i < k; i++) {
+		int idx = set_pos[i];
+		int global_idx = global_index_arr[i];
+		int global_set = i * size + rank;
 		if (global_set < global_set_boundary) {
 			MPI_Recv(&arr[idx+2], 1, MPI_FLOAT, (global_set+1)%size, global_set, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		}
@@ -108,7 +108,7 @@ int OddSort(float arr[], unsigned long long set_pos[], unsigned long long global
 int main(int argc, char** argv) {
 	MPI_Init(&argc,&argv);
 	int rank, size;
-	unsigned long long n = atoll(argv[1]);
+	int n = atoll(argv[1]);
 	char *file = argv[3];	
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -122,8 +122,8 @@ int main(int argc, char** argv) {
 	// printf("argv[2] = %s \n",argv[2]);
 	
 	// need n/2 
-	unsigned long long needed_proc = n/2;
-	unsigned long long k = (needed_proc/size)+1 ; 
+	int needed_proc = n/2;
+	int k = (needed_proc/size)+1 ; 
 
 
 	if(size == 1){
@@ -132,9 +132,9 @@ int main(int argc, char** argv) {
 		OddEvenSort(data, n);		
 		MPI_File_write_at(out, sizeof(float)*rank, &data, n, MPI_FLOAT, MPI_STATUS_IGNORE);
 	} else {
-		unsigned long long set_pos[k];
-		unsigned long long global_index_arr[k];
-		for(unsigned long long i = 0; i < k; i++){
+		int set_pos[k];
+		int global_index_arr[k];
+		for(int i = 0; i < k; i++){
 			set_pos[i] = i*3 ;
 			global_index_arr[i] = global_index(rank, i, size);
 		}
@@ -144,8 +144,8 @@ int main(int argc, char** argv) {
 		// 	data[c] = -9;
 		// 	// printf("rank %d  c = %d got float: %f\n", rank,c, data[c]);
 		// }
-		for (unsigned long long i = 0 ; i < k; i++){
-			unsigned long long global_idx = global_index_arr[i];
+		for (int i = 0 ; i < k; i++){
+			int global_idx = global_index_arr[i];
 			MPI_File_read_at(f, sizeof(float) * (global_idx), &data[set_pos[i]], 3, MPI_FLOAT, MPI_STATUS_IGNORE);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -169,8 +169,8 @@ int main(int argc, char** argv) {
 		// 		printf("rank %d  k  =  %d got float: %5.2f\t%5.2f\t%5.2f\n", rank, c, data[c*3],data[(c*3)+1],data[(c*3)+2]);
 		// }
 		
-		for (unsigned long long i = 0 ; i < k; i++){
-			unsigned long long global_idx = global_index_arr[i];
+		for (int i = 0 ; i < k; i++){
+			int global_idx = global_index_arr[i];
 			if(global_idx < n){
 				MPI_File_write_at(out, sizeof(float) * (global_idx), &data[set_pos[i]], 1, MPI_FLOAT,MPI_STATUS_IGNORE);
 			}
