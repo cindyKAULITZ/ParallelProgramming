@@ -3,37 +3,6 @@
 #include <math.h>
 #include <pthread.h>
 
-<<<<<<< Updated upstream
-unsigned long long pixels = 0;
-unsigned long long ncpus = 0;
-unsigned long long r = 0;
-unsigned long long x = 0;
-unsigned long long xx = -1;
-unsigned long long base = 0;
-unsigned long long *sub_start;
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-void* Compute(void* sub){
-	unsigned long long* start = (unsigned long long*) sub;
-	unsigned long long* end = (unsigned long long*) sub+1;
-	// printf("start %d\tend%d\nr = %d\t base = %d\n", *start, *end,r ,base);
-	unsigned long long y = 0;
-	for (unsigned long long x = *start; x < *end; x++) {
-
-		// pixels = pixels + ceil(sqrtl(base));
-		// pthread_mutex_lock(&mutex);
-		// base = base - 2*x -1;
-		// pthread_mutex_unlock(&mutex);
-		
-		pthread_mutex_lock(&mutex);
-		pixels += ceil(sqrtl(base-x*x));
-		// y += ceil(sqrtl(base-x*x));
-		pthread_mutex_unlock(&mutex);
-	}
-	// printf()
-	// pixels += y;
-=======
-
 #define METHOD_1
 // #define METHOD_2
 
@@ -76,7 +45,6 @@ void* sub_task(void *arg) {
 	pixels += pdata->pixel;
 	pthread_mutex_unlock(&mutex);
 #endif
->>>>>>> Stashed changes
 	pthread_exit(NULL);
 }
 
@@ -87,33 +55,6 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 	r = atoll(argv[1]);
-<<<<<<< Updated upstream
-	unsigned long long k = atoll(argv[2]);
-	// unsigned long long pixels = 0;
-	cpu_set_t cpuset;
-	sched_getaffinity(0, sizeof(cpuset), &cpuset);
-	ncpus = CPU_COUNT(&cpuset);
-	pthread_t t[ncpus]; 
-	sub_start = (unsigned long long*)malloc(sizeof(unsigned long long)* ncpus * 2);
-	base = r*r ;
-	const unsigned long long batch = ((r-1)/(ncpus))+1;
-	
-	//caculate partial sum
-	// unsigned long long sub_end = sub_start + batch;
-
-	for (int i = 0 ; i <ncpus; i++){
-		// write Compute function to calculate pixels
-		sub_start[2*i] = (unsigned long long)i * batch;
-		sub_start[(2*i)+1] = i * batch + batch;
-		if (sub_start[(2*i)+1] > r) { sub_start[(2*i)+1] = r;}
-		// sub_start[i] = i*;
-  		pthread_create(&t[i], NULL, Compute, (void*) &sub_start[2*i]);
-		pthread_join(t[i], NULL);
-	}
-
-	
-	pixels %= k;
-=======
 	k = atoll(argv[2]);
 
     // acquire cpu number
@@ -144,7 +85,6 @@ int main(int argc, char** argv) {
 	}
 #endif
 
->>>>>>> Stashed changes
 	// printf("pixels = %llu\n", pixels);
 	printf("%llu\n", (4 * (pixels)) % k);
 
