@@ -35,9 +35,11 @@ int main(int argc, char** argv) {
 	unsigned long long sub_start = (unsigned long long)rank * batch;
 	unsigned long long sub_end = sub_start + batch;
 	if (sub_end > r) { sub_end = r;}
+
 	for(unsigned long long ele_count = sub_start; ele_count < sub_end; ele_count++){
 		pixels_single += ceil(sqrtl(r_square - (ele_count)*(ele_count)));
 	}
+	
 	pixels_single %= k;
 
 	// Reduce all partial sum to processor 0 to pixels

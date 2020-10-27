@@ -1,19 +1,59 @@
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
+#include <mpi.h>
+#include <omp.h>
+// static unsigned long long compute_single(unsigned long long x, unsigned long long r_square){
+// 	return ceil(sqrtl(r_square - (x)*(x))); 
+// }
 
 int main(int argc, char** argv) {
 	if (argc != 3) {
 		fprintf(stderr, "must provide exactly 2 arguments!\n");
 		return 1;
 	}
-	unsigned long long r = atoll(argv[1]);
-	unsigned long long k = atoll(argv[2]);
+	const unsigned long long r = atoll(argv[1]);
+	const unsigned long long k = atoll(argv[2]);
 	unsigned long long pixels = 0;
-	for (unsigned long long x = 0; x < r; x++) {
-		unsigned long long y = ceil(sqrtl(r*r - x*x));
-		pixels += y;
-		pixels %= k;
+	unsigned long long pixels_single = 0;
+	
+	int rank, size;
+	double start, end;
+
+	MPI_Request request;
+	MPI_Status status;
+	const unsigned long long r_square = r*r;
+
+	// start parallel computation
+    MPI_Init(&argc, &argv);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+	// start = MPI_Wtime();
+	const unsigned long long batch = ((r-1)/(size))+1;
+
+	#pragma omp parallel reduction(+:pixels_single)
+	{
+		//caculate partial sum
+		unsigned long long sub_start = (unsigned long long)rank * batch;
+		unsigned long long sub_end = sub_start + batch;
+		if (sub_end > r) { sub_end = r;}
+
+		#pragma omp for nowait
+		for(unsigned long long ele_count = sub_start; ele_count < sub_end; ele_count++){
+			pixels_single += ceil(sqrtl(r_square - (ele_count)*(ele_count)));
+		}
+		pixels_single %= k;
+
 	}
-	printf("%llu\n", (4 * pixels) % k);
+
+	// Reduce all partial sum to processor 0 to pixels
+	MPI_Reduce(&pixels_single, &pixels, 1,MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+	// end = MPI_Wtime();
+
+	if(rank == 0){
+		printf("%llu\n", (pixels*4) % k);
+		// printf("%f\n", end-start);
+	}
+	MPI_Finalize();
 }

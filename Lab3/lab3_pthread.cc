@@ -6,8 +6,7 @@
 unsigned long long pixels = 0;
 unsigned long long ncpus = 0;
 unsigned long long r = 0;
-unsigned long long x = 0;
-unsigned long long xx = -1;
+unsigned long long k = 0;
 unsigned long long base = 0;
 unsigned long long *sub_start;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -16,7 +15,8 @@ void* Compute(void* sub){
 	unsigned long long* start = (unsigned long long*) sub;
 	unsigned long long* end = (unsigned long long*) sub+1;
 	// printf("start %d\tend%d\nr = %d\t base = %d\n", *start, *end,r ,base);
-	unsigned long long y = 0;
+	unsigned long long pixel = 0;
+	#pragma GCC ivdep
 	for (unsigned long long x = *start; x < *end; x++) {
 
 		// pixels = pixels + ceil(sqrtl(base));
@@ -24,13 +24,15 @@ void* Compute(void* sub){
 		// base = base - 2*x -1;
 		// pthread_mutex_unlock(&mutex);
 		
-		pthread_mutex_lock(&mutex);
-		pixels += ceil(sqrtl(base-x*x));
+		pixel += ceil(sqrtl(base-x*x));
 		// y += ceil(sqrtl(base-x*x));
-		pthread_mutex_unlock(&mutex);
 	}
+	pixel %= k;
 	// printf()
-	// pixels += y;
+	pthread_mutex_lock(&mutex);
+	pixels += pixel;
+	pthread_mutex_unlock(&mutex);
+
 	pthread_exit(NULL);
 }
 
@@ -40,8 +42,9 @@ int main(int argc, char** argv) {
 		fprintf(stderr, "must provide exactly 2 arguments!\n");
 		return 1;
 	}
+	// printf("???");
 	r = atoll(argv[1]);
-	unsigned long long k = atoll(argv[2]);
+	k = atoll(argv[2]);
 	// unsigned long long pixels = 0;
 	cpu_set_t cpuset;
 	sched_getaffinity(0, sizeof(cpuset), &cpuset);
@@ -53,7 +56,7 @@ int main(int argc, char** argv) {
 	
 	//caculate partial sum
 	// unsigned long long sub_end = sub_start + batch;
-
+	// printf("???");
 	for (int i = 0 ; i <ncpus; i++){
 		// write Compute function to calculate pixels
 		sub_start[2*i] = (unsigned long long)i * batch;
@@ -61,10 +64,12 @@ int main(int argc, char** argv) {
 		if (sub_start[(2*i)+1] > r) { sub_start[(2*i)+1] = r;}
 		// sub_start[i] = i*;
   		pthread_create(&t[i], NULL, Compute, (void*) &sub_start[2*i]);
+	}
+
+	for (int i = 0; i<ncpus; i++) {
 		pthread_join(t[i], NULL);
 	}
 
-	
 	pixels %= k;
 	// printf("pixels = %llu\n", pixels);
 
