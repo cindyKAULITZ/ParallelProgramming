@@ -17,10 +17,9 @@ int main(int argc, char** argv) {
 	unsigned long long pixels_single = 0;
 	
 	int rank, size;
-	double start, end;
-
-	MPI_Request request;
-	MPI_Status status;
+	// double start, end;
+	// MPI_Request request;
+	// MPI_Status status;
 	const unsigned long long r_square = r*r;
 
 	// start parallel computation
@@ -36,17 +35,30 @@ int main(int argc, char** argv) {
 	unsigned long long sub_end = sub_start + batch;
 	if (sub_end > r) { sub_end = r;}
 
+	// Method 1
+	// for(unsigned long long ele_count = sub_start; ele_count < sub_end; ele_count++){
+	// 	pixels_single += ceil(sqrtl(r_square - (ele_count)*(ele_count)));
+	// }
+	// pixels_single %= k;
+
+	// Method 2
+	unsigned long long base = r_square - (sub_start*sub_start);
+	unsigned long long xx = 0;
 	for(unsigned long long ele_count = sub_start; ele_count < sub_end; ele_count++){
-		pixels_single += ceil(sqrtl(r_square - (ele_count)*(ele_count)));
+		base = base - xx;
+		pixels_single += ceil(sqrtl(base));
+		xx = 2*ele_count + 1;		
 	}
 	
 	pixels_single %= k;
+
 
 	// Reduce all partial sum to processor 0 to pixels
 	MPI_Reduce(&pixels_single, &pixels, 1,MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 	// end = MPI_Wtime();
 
 	if(rank == 0){
+		// printf("total pixel : %llu\n", pixels);		
 		printf("%llu\n", (pixels*4) % k);
 		// printf("%f\n", end-start);
 	}
