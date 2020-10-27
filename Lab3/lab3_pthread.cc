@@ -16,10 +16,12 @@ unsigned long long pixels = 0;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-
 typedef struct data {
     unsigned long long thread_id;
+
+#ifdef METHOD_2
     unsigned long long pixel = 0;
+#endif
 } data;
 
 
@@ -29,20 +31,26 @@ void* sub_task(void *arg) {
 	unsigned long long sub_end = sub_start + batch;
 	if (sub_end > r) { sub_end = r;}
 
-	unsigned long long base = r_square - (sub_start*sub_start);
-	unsigned long long xx = 0;
+	// unsigned long long base = r_square - (sub_start*sub_start);
+	// unsigned long long xx = 0;
 	unsigned long long sub_pixel = 0;
 	for(unsigned long long ele_count = sub_start; ele_count < sub_end; ele_count++){
-		base = base - xx;
-		sub_pixel += ceil(sqrtl(base));
-		xx = 2*ele_count + 1;		
+		// base = base - xx;
+		// sub_pixel += ceil(sqrtl(base));
+		// xx = 2*ele_count + 1;
+
+		// original version
+		sub_pixel += ceil(sqrtl(r_square - (ele_count)*(ele_count)));
 	}
 	sub_pixel %= k;
+
+#ifdef METHOD_2
 	pdata->pixel = sub_pixel;
+#endif
 
 #ifdef METHOD_1
 	pthread_mutex_lock(&mutex);
-	pixels += pdata->pixel;
+	pixels += sub_pixel;
 	pthread_mutex_unlock(&mutex);
 #endif
 	pthread_exit(NULL);
@@ -50,10 +58,12 @@ void* sub_task(void *arg) {
 
 
 int main(int argc, char** argv) {
-	if (argc != 3) {
-		fprintf(stderr, "must provide exactly 2 arguments!\n");
-		return 1;
-	}
+	// if (argc != 3) {
+	// 	fprintf(stderr, "must provide exactly 2 arguments!\n");
+	// 	return 1;
+	// }
+
+
 	r = atoll(argv[1]);
 	k = atoll(argv[2]);
 
@@ -69,13 +79,13 @@ int main(int argc, char** argv) {
     pthread_t threads[ncpus];
 	data datas[ncpus];
 
-	for (int i = 0 ; i <ncpus; i++){
-		// part 0 is done by main thread
+	size_t i;
+	for (i = 0 ; i <ncpus; i++){
 		datas[i].thread_id = i;
-  		pthread_create(&threads[i], NULL, sub_task, (void*) &datas[i]);
+  		pthread_create(&threads[i], NULL, sub_task, (void*)&datas[i]);
 	}
 
-	for (int i = 0 ; i <ncpus; i++){
+	for (i = 0 ; i <ncpus; i++){
 		pthread_join(threads[i], NULL);
 	}
 
