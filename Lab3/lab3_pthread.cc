@@ -9,22 +9,28 @@ unsigned long long r = 0;
 unsigned long long x = 0;
 unsigned long long xx = -1;
 unsigned long long base = 0;
+unsigned long long *sub_start;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void* Compute(void* arg){
-	for (; x < r; x++) {
-		// y = ceil(sqrtl(base));
+void* Compute(void* sub){
+	unsigned long long* start = (unsigned long long*) sub;
+	unsigned long long* end = (unsigned long long*) sub+1;
+	// printf("start %d\tend%d\nr = %d\t base = %d\n", *start, *end,r ,base);
+	unsigned long long y = 0;
+	for (unsigned long long x = *start; x < *end; x++) {
+
+		// pixels = pixels + ceil(sqrtl(base));
 		// pthread_mutex_lock(&mutex);
-		xx += 2;
+		// base = base - 2*x -1;
 		// pthread_mutex_unlock(&mutex);
-		pixels = pixels + ceil(sqrtl(base));
-		base = base - xx;
 		
-		// pthread_mutex_lock(&mutex);
-		// base -= 2*x -1;
-		// xx = (x*2) + 1;
-		// pthread_mutex_unlock(&mutex);
+		pthread_mutex_lock(&mutex);
+		pixels += ceil(sqrtl(base-x*x));
+		// y += ceil(sqrtl(base-x*x));
+		pthread_mutex_unlock(&mutex);
 	}
+	// printf()
+	// pixels += y;
 	pthread_exit(NULL);
 }
 
@@ -41,12 +47,20 @@ int main(int argc, char** argv) {
 	sched_getaffinity(0, sizeof(cpuset), &cpuset);
 	ncpus = CPU_COUNT(&cpuset);
 	pthread_t t[ncpus]; 
-	// unsigned long long y, xx=0;
+	sub_start = (unsigned long long*)malloc(sizeof(unsigned long long)* ncpus * 2);
 	base = r*r ;
+	const unsigned long long batch = ((r-1)/(ncpus))+1;
 	
+	//caculate partial sum
+	// unsigned long long sub_end = sub_start + batch;
+
 	for (int i = 0 ; i <ncpus; i++){
 		// write Compute function to calculate pixels
-  		pthread_create(&t[i], NULL, Compute, NULL);
+		sub_start[2*i] = (unsigned long long)i * batch;
+		sub_start[(2*i)+1] = i * batch + batch;
+		if (sub_start[(2*i)+1] > r) { sub_start[(2*i)+1] = r;}
+		// sub_start[i] = i*;
+  		pthread_create(&t[i], NULL, Compute, (void*) &sub_start[2*i]);
 		pthread_join(t[i], NULL);
 	}
 
