@@ -22,5 +22,9 @@
 - [scoreboard](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/hw1/)
 
 ### hw2 Mandelbrot Set (**DeadLine : 11/16 23:59**)
-- [spec]( https://drive.google.com/file/d/1JKrz0BzqKlvLGJ0J-dNEOISAZA7jRhgO/view?usp=sharing)
-- [scoreboard]()
+- [spec (update) ](https://docs.google.com/document/d/1fJasbjKBzn0p9a-oITdf3GCBukCHvToklc1eX15Bd94/edit)
+- [scoreboard hw2a](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/hw2a/)
+- [scoreboard hw2b](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/hw2b/)
+> Spec update(10/29)
+> - 1. /home/pp20/share/hw2/hw2seq.c更換成hw2seq.cc
+> - 2. 提供hw2-diff來檢測兩張png的差異 e.g. `hw2-diff slow01.png myout.png`
