@@ -66,15 +66,15 @@ double get_x0(int col) { return col * x0_term + left; }
 
 bool next_pixel(int *p_row, int *p_col) {
     // assume (height > *p_row >= 0) and (width > *p_col >= 0) 
-    if ( *p_col < width) {
+    if ( *p_col < width-1) {
         *p_col += 1;
         return true;      // remain in the same row
-    } else if ( *p_col == width ) {
+    } else if ( *p_col == width-1 ) {
         *p_col = 0;
-        if (*p_row < height) {
-            *p_row += 1;
+        *p_row += 1;
+        if (*p_row < height-1) {
             return true;  // end of the current row
-        } else if (*p_row == height) {
+        } else if (*p_row == height-1) {
             return false;  // end of image
         }
     }
@@ -94,8 +94,7 @@ struct pixel {
 void task(void *arg) {
     pixel *p_pixel = (pixel*)arg;
     int j, i;
-    bool stop_flag;
-
+    // double x0, y0;
     pthread_mutex_lock(&task_mutex);
     i = p_pixel->col_idx;
     j = p_pixel->row_idx;
@@ -224,16 +223,17 @@ int main(int argc, char** argv) {
 
     pixel pos;
     pos.image = image;
-    MAX_THREADS = CPU_COUNT(&cpu_set);
+    MAX_THREADS = CPU_COUNT(&cpu_set) + 2;
+    // MAX_THREADS = 1;
     MAX_QUEUE = width * height;
     int task_count = 0;
 
     if (MAX_THREADS == 1 ) {
         /* sequential verison of mandelbrot set */
         for (int j = 0; j < height; ++j) {
-            double y0 = j * ((upper - lower) / height) + lower;
+            double y0 = j * y0_term + lower;
             for (int i = 0; i < width; ++i) {
-                double x0 = i * ((right - left) / width) + left;
+                double x0 = i * x0_term + left;
                 int repeats = 0; // iteration number
                 double x = 0;    // real part of Z_repeat
                 double y = 0;    // imag part of Z_repeat
@@ -266,6 +266,12 @@ int main(int argc, char** argv) {
             // printf("task_count : %d\n", task_count++);
             // fflush(stdout);
         }
+        // // send task into queue of thread pool
+        // for (size_t i = 0; i < MAX_QUEUE; i++ ) {
+        //     threadpool_add(pool, &write_task, (void*)&pos, 0);
+        //     // printf("task_count : %d\n", task_count++);
+        //     // fflush(stdout);
+        // }
         // destory thread pool untill complete all tasks
         threadpool_destroy(pool, threadpool_graceful);
     }
