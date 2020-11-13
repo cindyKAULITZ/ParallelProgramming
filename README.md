@@ -16,6 +16,13 @@
   - [Lab3 hybrid scoreboard](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/lab3_hybrid/)
   - [Lab3 omp scoreboard](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/lab3_omp/)
 
+### Lab4
+- [Lab4 Slides](https://docs.google.com/presentation/d/1CQ44U-n4y1DFSF3NgNsQTXzbcZAhHh5Ed54slMs-HWg/edit?usp=sharing)
+- [HW1 optimization](https://docs.google.com/presentation/d/1_ixM_6RqQiFggF0PA5TNWPkUIONm4x9-eIW4cs_cJSc/edit?usp=sharing)
+- [scoreBoard](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/lab4/)
+
+
+
 ## HomeWork
 ### hw1 Odd-Even set
 - [spec](https://docs.google.com/document/d/1DwfAI_8m9obhJLDkiBwKLvBE7xIDX98bppFFWsFzo38/edit?usp=sharing)
