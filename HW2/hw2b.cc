@@ -30,7 +30,7 @@ void write_png(const char* filename, int iters, int width, int height, const int
     png_bytep color;
     for (y = 0; y < height; ++y) {
         memset(row, 0, row_size);
-        #pragma omp parallel for num_threads(40)
+        // #pragma omp parallel for num_threads(40)
         for (x = 0; x < width; ++x) {
             p = buffer[(height - 1 - y) * width + x];
             color = row + x * 3;
@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
     int rank, size;
     int* image;
     int row_count ;
-    int availiable_cpu = CPU_COUNT(&cpu_set);
+    // int availiable_cpu = CPU_COUNT(&cpu_set);
     double time, t1,t2;
 	MPI_Status status, status1;
 
@@ -87,13 +87,13 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     
     if (rank == 0){
-        t1 = MPI_Wtime();
+        // t1 = MPI_Wtime();
         /* allocate memory for image */
         image = (int*)malloc(width * height * sizeof(int));
         assert(image);
 
-        int total_row = height;
         row_count = 0;
+
 
         for (int c = 1; c < size; c++){
             MPI_Send(&row_count, 1, MPI_INT, c, 1, MPI_COMM_WORLD);
@@ -114,16 +114,17 @@ int main(int argc, char** argv) {
             write_j = status1.MPI_TAG;
             MPI_Recv(tmp, width, MPI_INT, MPI_ANY_SOURCE, write_j , MPI_COMM_WORLD, &status1);
 
-            #pragma omp parallel num_threads(80)
-            {
+            // #pragma omp parallel num_threads(10)
+            // {
+                // #pragma omp for nowait
                 #pragma GCC ivdep
                 for(int c = 0; c<width;c++){
                     image[write_j*width + c] = tmp[c];
                 }
 
-            }
+            // }
 
-            if( row_count < total_row){
+            if( row_count < height){
                 MPI_Send(&row_count, 1, MPI_INT, free_rank, 1, MPI_COMM_WORLD);
                 row_count++;
             }else{
@@ -149,19 +150,19 @@ int main(int argc, char** argv) {
         stop = status.MPI_TAG;
         sub_image = (int*)malloc(width * sizeof(int));
         assert(sub_image);
-        // int n_t = 0;
+        int n_t = 0;
 
-        // if(width > 1000){
-        //     n_t = 80;
-        // }else{
-        //     n_t = 40;
-        // }
+        if(width > 1500){
+            n_t = 80;
+        }else{
+            n_t = 50;
+        }
 
         while (true){
             y0 = j * y0_term + lower;
-            #pragma omp parallel num_threads(80)
+            #pragma omp parallel num_threads(n_t)
             {   
-                #pragma omp for schedule(auto) nowait
+                #pragma omp for schedule(guided) nowait
                 for (int i = 0; i < width; ++i) {
                     x0 = i * x0_term + left;
                     repeats = 0; // iteration number
@@ -209,7 +210,7 @@ int main(int argc, char** argv) {
         // }
         write_png(filename, iters, width, height, image);
         free(image);
-        t2 = MPI_Wtime();
+        // t2 = MPI_Wtime();
         // // printf("cost time = %.3f\n", t2-t1);
     }
     MPI_Finalize();
