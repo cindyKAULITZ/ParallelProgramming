@@ -21,6 +21,10 @@
 - [HW1 optimization](https://docs.google.com/presentation/d/1_ixM_6RqQiFggF0PA5TNWPkUIONm4x9-eIW4cs_cJSc/edit?usp=sharing)
 - [scoreBoard](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/lab4/)
 
+> Login info
+> ssh pp20s46@hades.cs.nthu.edu.tw 
+> pw: sameasbefore
+
 
 
 ## HomeWork
@@ -30,8 +34,8 @@
 
 ### hw2 Mandelbrot Set (**DeadLine : 11/16 23:59**)
 - [spec (update) ](https://docs.google.com/document/d/1fJasbjKBzn0p9a-oITdf3GCBukCHvToklc1eX15Bd94/edit)
-- [highlight] (https://drive.google.com/file/d/16twG7Go5iiveisek8aSxjWvK7uJuwmWo/view?usp=sharing)
-- [related_slide] (https://drive.google.com/file/d/1Y3XX2O6ba4QqpezQdD4tcOU9zgOYq1_q/view?usp=sharing)
+- [highlight](https://drive.google.com/file/d/16twG7Go5iiveisek8aSxjWvK7uJuwmWo/view?usp=sharing)
+- [related_slide](https://drive.google.com/file/d/1Y3XX2O6ba4QqpezQdD4tcOU9zgOYq1_q/view?usp=sharing)
 
 - [scoreboard hw2a](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/hw2a/)
 - [scoreboard hw2b](https://apollo.cs.nthu.edu.tw/pp20/scoreboard/hw2b/)
