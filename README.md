@@ -42,3 +42,6 @@
 > Spec update(10/29)
 > - 1. /home/pp20/share/hw2/hw2seq.c更換成hw2seq.cc
 > - 2. 提供hw2-diff來檢測兩張png的差異 e.g. `hw2-diff slow01.png myout.png`
+
+### hw3 All-Pairs Shortest Path (CPU) (**deadline: 12/02 18:00**)
+- [spec](https://apollo.cs.nthu.edu.tw/pp20/hw3/)
