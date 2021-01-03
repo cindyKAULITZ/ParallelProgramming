@@ -1,0 +1,162 @@
+➜  hw4-1 git:(master) ✗  srun -p prof -N1 -n1 --gres=gpu:1 nvprof --metrics inst_integer,achieved_occupancy,sm_efficiency,shared_load_throughput,shared_store_throughput,gld_throughput,gst_throughput ./hw4-1 cases/c17.1 c17.1.out   
+srun: job 146094 queued and waiting for resources
+srun: job 146094 has been allocated resources
+==52615== NVPROF is profiling process 52615, command: ./hw4-1 cases/c17.1 c17.1.out
+==52615== Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+Input file cost time : 0.0331361s
+B = 32 
+Vertices(V) = 2100 
+Edges(E) = 1805699 
+Output file cost time : 0.165982s
+==52615== Profiling application: ./hw4-1 cases/c17.1 c17.1.out
+==52615== Profiling result:
+==52615== Metric result:
+Invocations                               Metric Name                        Metric Description         Min         Max         Avg
+Device "GeForce GTX 1080 (0)"
+    Kernel: PHASE_TWO(int, int, int*, int)
+         66                              inst_integer                      Integer Instructions    20631488    31390976    31227953
+         66                        achieved_occupancy                        Achieved Occupancy    0.794123    0.949695    0.936901
+         66                             sm_efficiency                   Multiprocessor Activity      83.92%      87.38%      86.62%
+         66                    shared_load_throughput             Shared Memory Load Throughput  1359.1GB/s  1477.2GB/s  1431.9GB/s
+         66                   shared_store_throughput            Shared Memory Store Throughput  32.073GB/s  235.27GB/s  75.209GB/s
+         66                            gld_throughput                    Global Load Throughput  20.613GB/s  34.271GB/s  33.077GB/s
+         66                            gst_throughput                   Global Store Throughput  12.529GB/s  17.089GB/s  16.523GB/s
+    Kernel: PHASE_ONE(int, int, int*, int)
+         66                              inst_integer                      Integer Instructions      220160      220160      220160
+         66                        achieved_occupancy                        Achieved Occupancy    0.496217    0.497224    0.496486
+         66                             sm_efficiency                   Multiprocessor Activity       3.64%       3.80%       3.77%
+         66                    shared_load_throughput             Shared Memory Load Throughput  50.350GB/s  54.165GB/s  51.460GB/s
+         66                   shared_store_throughput            Shared Memory Store Throughput  574.03MB/s  11.110GB/s  2.1767GB/s
+         66                            gld_throughput                    Global Load Throughput  269.07MB/s  629.95MB/s  605.79MB/s
+         66                            gst_throughput                   Global Store Throughput  269.07MB/s  629.95MB/s  605.79MB/s
+    Kernel: PHASE_THREE(int, int, int*, int)
+         66                              inst_integer                      Integer Instructions   677349888   690446496   690248062
+         66                        achieved_occupancy                        Achieved Occupancy    0.900012    0.905075    0.901650
+         66                             sm_efficiency                   Multiprocessor Activity      99.02%      99.24%      99.13%
+         66                    shared_load_throughput             Shared Memory Load Throughput  3034.5GB/s  3054.5GB/s  3041.4GB/s
+         66                   shared_store_throughput            Shared Memory Store Throughput  95.378GB/s  96.008GB/s  95.585GB/s
+         66                            gld_throughput                    Global Load Throughput  123.05GB/s  160.84GB/s  159.57GB/s
+         66                            gst_throughput                   Global Store Throughput  53.067GB/s  53.692GB/s  53.191GB/s
+➜  hw4-1 git:(master) ✗ ~
+
+
+➜  hw4-1 git:(master) ✗ srun -p prof -N1 -n1 --gres=gpu:1 nvprof --metrics inst_integer,achieved_occupancy,sm_efficiency,shared_load_throughput,shared_store_throughput,gld_throughput,gst_throughput ./hw4-1 cases/c17.1 c17.1.out
+srun: job 146180 queued and waiting for resources
+srun: job 146180 has been allocated resources
+==53295== NVPROF is profiling process 53295, command: ./hw4-1 cases/c17.1 c17.1.out
+==53295== Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+Input file cost time : 0.0320993s
+B = 16 
+Vertices(V) = 2100 
+Edges(E) = 1805699 
+Output file cost time : 0.165289s
+==53295== Profiling application: ./hw4-1 cases/c17.1 c17.1.out
+==53295== Profiling result:
+==53295== Metric result:
+Invocations                               Metric Name                        Metric Description         Min         Max         Avg
+Device "GeForce GTX 1080 (0)"
+    Kernel: PHASE_TWO(int, int, int*, int)
+        132                              inst_integer                      Integer Instructions     3396032     9414272     9368679
+        132                        achieved_occupancy                        Achieved Occupancy    0.589842    0.828027    0.811454
+        132                             sm_efficiency                   Multiprocessor Activity      70.84%      81.83%      79.39%
+        132                    shared_load_throughput             Shared Memory Load Throughput  869.55GB/s  1178.4GB/s  1107.5GB/s
+        132                   shared_store_throughput            Shared Memory Store Throughput  46.167GB/s  225.84GB/s  80.719GB/s
+        132                            gld_throughput                    Global Load Throughput  15.084GB/s  60.140GB/s  56.345GB/s
+        132                            gst_throughput                   Global Store Throughput  12.713GB/s  37.975GB/s  35.577GB/s
+    Kernel: PHASE_ONE(int, int, int*, int)
+        132                              inst_integer                      Integer Instructions       30464       30464       30464
+        132                        achieved_occupancy                        Achieved Occupancy    0.123183    0.124730    0.124693
+        132                             sm_efficiency                   Multiprocessor Activity       2.52%       2.89%       2.79%
+        132                    shared_load_throughput             Shared Memory Load Throughput  11.320GB/s  14.247GB/s  13.045GB/s
+        132                   shared_store_throughput            Shared Memory Store Throughput  281.75MB/s  2.6814GB/s  668.47MB/s
+        132                            gld_throughput                    Global Load Throughput  36.946MB/s  372.17MB/s  338.49MB/s
+        132                            gst_throughput                   Global Store Throughput  36.946MB/s  471.06MB/s  428.80MB/s
+    Kernel: PHASE_THREE(int, int, int*, int)
+        132                              inst_integer                      Integer Instructions   439456256   475182176   474911525
+        132                        achieved_occupancy                        Achieved Occupancy    0.898274    0.902138    0.900689
+        132                             sm_efficiency                   Multiprocessor Activity      98.56%      98.98%      98.87%
+        132                    shared_load_throughput             Shared Memory Load Throughput  2270.6GB/s  2477.7GB/s  2456.5GB/s
+        132                   shared_store_throughput            Shared Memory Store Throughput  142.73GB/s  155.52GB/s  154.41GB/s
+        132                            gld_throughput                    Global Load Throughput  159.70GB/s  289.59GB/s  286.56GB/s
+        132                            gst_throughput                   Global Store Throughput  111.69GB/s  122.51GB/s  120.84GB/s
+
+
+➜  hw4-1 srun -p prof -N1 -n1 --gres=gpu:1 nvprof --metrics inst_integer,achieved_occupancy,sm_efficiency,shared_load_throughput,shared_store_throughput,gld_throughput,gst_throughput ./hw4-1 cases/c17.1 c17.1.out
+srun: job 146375 queued and waiting for resources
+srun: job 146375 has been allocated resources
+==1079276== NVPROF is profiling process 1079276, command: ./hw4-1 cases/c17.1 c17.1.out
+==1079276== Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+Input file cost time : 0.0325411s
+B = 8
+Vertices(V) = 2100
+Edges(E) = 1805699
+Output file cost time : 5.29936s
+==1079276== Profiling application: ./hw4-1 cases/c17.1 c17.1.out
+==1079276== Profiling result:
+==1079276== Metric result:
+Invocations                               Metric Name                        Metric Description         Min         Max         Avg
+Device "GeForce GTX 1080 (0)"
+    Kernel: PHASE_TWO(int, int, int*, int)
+        263                              inst_integer                      Integer Instructions     1878144     3114816     3110113
+        263                        achieved_occupancy                        Achieved Occupancy    0.468662    0.725085    0.673044
+        263                             sm_efficiency                   Multiprocessor Activity      59.91%      74.22%      67.54%
+        263                    shared_load_throughput             Shared Memory Load Throughput  430.21GB/s  667.87GB/s  534.24GB/s
+        263                   shared_store_throughput            Shared Memory Store Throughput  40.526GB/s  164.15GB/s  58.818GB/s
+        263                            gld_throughput                    Global Load Throughput  44.922GB/s  80.158GB/s  64.048GB/s
+        263                            gst_throughput                   Global Store Throughput  32.670GB/s  53.379GB/s  42.658GB/s
+    Kernel: PHASE_ONE(int, int, int*, int)
+        263                              inst_integer                      Integer Instructions        4544        4544        4544
+        263                        achieved_occupancy                        Achieved Occupancy    0.030801    0.031241    0.031226
+        263                             sm_efficiency                   Multiprocessor Activity       1.84%       2.47%       2.21%
+        263                    shared_load_throughput             Shared Memory Load Throughput  2.0357GB/s  2.6609GB/s  2.4524GB/s
+        263                   shared_store_throughput            Shared Memory Store Throughput  95.967MB/s  770.16MB/s  165.97MB/s
+        263                            gld_throughput                    Global Load Throughput  53.728MB/s  163.49MB/s  150.30MB/s
+        263                            gst_throughput                   Global Store Throughput  53.728MB/s  217.98MB/s  200.34MB/s
+    Kernel: PHASE_THREE(int, int, int*, int)
+        263                              inst_integer                      Integer Instructions   338344832   363866432   363769391
+        263                        achieved_occupancy                        Achieved Occupancy    0.919237    0.929405    0.926723
+        263                             sm_efficiency                   Multiprocessor Activity      98.83%      99.15%      99.06%
+        263                    shared_load_throughput             Shared Memory Load Throughput  987.95GB/s  1119.9GB/s  1062.1GB/s
+        263                   shared_store_throughput            Shared Memory Store Throughput  123.73GB/s  139.99GB/s  133.01GB/s
+        263                            gld_throughput                    Global Load Throughput  227.49GB/s  306.91GB/s  298.32GB/s
+        263                            gst_throughput                   Global Store Throughput  123.26GB/s  139.99GB/s  132.50GB/s
+
+➜  hw4-1 srun -p prof -N1 -n1 --gres=gpu:1 nvprof --metrics inst_integer,achieved_occupancy,sm_efficiency,shared_load_throughput,shared_store_throughput,gld_throughput,gst_throughput ./hw4-1 cases/c17.1 c17.1.out
+srun: job 146457 queued and waiting for resources
+srun: job 146457 has been allocated resources
+==54592== NVPROF is profiling process 54592, command: ./hw4-1 cases/c17.1 c17.1.out
+==54592== Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+Input file cost time : 0.0319708s
+B = 24
+Vertices(V) = 2100
+Edges(E) = 1805699
+Output file cost time : 0.166365s
+==54592== Profiling application: ./hw4-1 cases/c17.1 c17.1.out
+==54592== Profiling result:
+==54592== Metric result:
+Invocations                               Metric Name                        Metric Description         Min         Max         Avg
+Device "GeForce GTX 1080 (0)"
+    Kernel: PHASE_TWO(int, int, int*, int)
+         88                              inst_integer                      Integer Instructions    10424448    18850752    18754998
+         88                        achieved_occupancy                        Achieved Occupancy    0.633398    0.785685    0.776639
+         88                             sm_efficiency                   Multiprocessor Activity      83.57%      88.00%      86.58%
+         88                    shared_load_throughput             Shared Memory Load Throughput  1186.7GB/s  1421.0GB/s  1343.9GB/s
+         88                   shared_store_throughput            Shared Memory Store Throughput  38.138GB/s  243.88GB/s  82.230GB/s
+         88                            gld_throughput                    Global Load Throughput  23.029GB/s  48.679GB/s  45.865GB/s
+         88                            gst_throughput                   Global Store Throughput  16.872GB/s  29.943GB/s  28.287GB/s
+    Kernel: PHASE_ONE(int, int, int*, int)
+         88                              inst_integer                      Integer Instructions       96192       96192       96192
+         88                        achieved_occupancy                        Achieved Occupancy    0.279163    0.280320    0.280113
+         88                             sm_efficiency                   Multiprocessor Activity       3.16%       3.42%       3.33%
+         88                    shared_load_throughput             Shared Memory Load Throughput  27.195GB/s  33.643GB/s  30.782GB/s
+         88                   shared_store_throughput            Shared Memory Store Throughput  446.87MB/s  6.3219GB/s  1.4046GB/s
+         88                            gld_throughput                    Global Load Throughput  167.58MB/s  589.90MB/s  535.49MB/s
+         88                            gst_throughput                   Global Store Throughput  173.78MB/s  718.35MB/s  660.07MB/s
+    Kernel: PHASE_THREE(int, int, int*, int)
+         88                              inst_integer                      Integer Instructions   562608576   583669440   583430112
+         88                        achieved_occupancy                        Achieved Occupancy    0.752611    0.754883    0.753823
+         88                             sm_efficiency                   Multiprocessor Activity      98.98%      99.18%      99.13%
+         88                    shared_load_throughput             Shared Memory Load Throughput  2504.4GB/s  2825.0GB/s  2787.9GB/s
+         88                   shared_store_throughput            Shared Memory Store Throughput  104.95GB/s  117.71GB/s  116.83GB/s
+         88                            gld_throughput                    Global Load Throughput  154.49GB/s  219.11GB/s  216.81GB/s
+         88                            gst_throughput                   Global Store Throughput  80.169GB/s  90.943GB/s  89.246GB/s
