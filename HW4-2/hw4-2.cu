@@ -20,22 +20,26 @@ int ceil(int a, int b);
 // void cal(int B, int Round, int block_start_x, int block_start_y, int block_width, int block_height);
 
 int n, m;
+// int given_B;
+int unpad_n, diff_n; 
 // static int Dist[V][V];
 static __align__(32) int *dist, *Result;
+// static __align__(32) int *unpad_Result;
 
 __global__ void PHASE_ONE(int Round, int B, int* distance, int V){
     // calculate target pivot
-    extern __shared__ __align__(32) int shared_distance[];
+    extern __shared__  int shared_distance[];
     int x = threadIdx.x;
     int y = threadIdx.y;
     int p_x = Round * B + x; 
     int p_y = Round * B + y; 
 
-    if(p_y < V && p_x < V){
-        shared_distance[y * B + x] = distance[p_y * V + p_x];
-    }else{
-        shared_distance[y * B + x] = INF;
-    }
+    // if(p_y < V && p_x < V){
+    //     shared_distance[y * B + x] = distance[p_y * V + p_x];
+    // }else{
+    //     shared_distance[y * B + x] = INF;
+    // }
+    shared_distance[y * B + x] = distance[p_y * V + p_x];
     __syncthreads();
 
     #pragma unroll 
@@ -46,9 +50,10 @@ __global__ void PHASE_ONE(int Round, int B, int* distance, int V){
         __syncthreads();
     }
     
-    if(p_y < V && p_x < V){
-        distance[p_y * V + p_x] = shared_distance[y * B + x];
-    }
+    // if(p_y < V && p_x < V){
+    //     distance[p_y * V + p_x] = shared_distance[y * B + x];
+    // }
+    distance[p_y * V + p_x] = shared_distance[y * B + x];
 
 }
 __global__ void PHASE_TWO(int Round, int B, int* distance, int V){
@@ -56,7 +61,7 @@ __global__ void PHASE_TWO(int Round, int B, int* distance, int V){
     if(blockIdx.x == Round){
         return;
     }
-    extern __shared__ __align__(32) int shared[];
+    extern __shared__ int shared[];
     // first block stores pivot block
     // rest of spaces store distance col/row's block
     int* shared_p_distacne = shared; 
@@ -69,11 +74,12 @@ __global__ void PHASE_TWO(int Round, int B, int* distance, int V){
     int idx_y, idx_x;
 
     // fill present distance
-    if(p_y < V && p_x < V){
-        shared_p_distacne[y * B + x] = distance[p_y * V + p_x];
-    }else{
-        shared_p_distacne[y * B + x] = INF;
-    } 
+    // if(p_y < V && p_x < V){
+    //     shared_p_distacne[y * B + x] = distance[p_y * V + p_x];
+    // }else{
+    //     shared_p_distacne[y * B + x] = INF;
+    // } 
+    shared_p_distacne[y * B + x] = distance[p_y * V + p_x];
     __syncthreads();
 
     if(blockIdx.x == Round) {
@@ -94,16 +100,17 @@ __global__ void PHASE_TWO(int Round, int B, int* distance, int V){
         return;
     }
 
-    if(idx_y < V && idx_x < V){
-        shared_distance[y * B + x] = distance[idx_y * V + idx_x];
-    }else{
-        shared_distance[y * B + x] = INF;
-    } 
+    // if(idx_y < V && idx_x < V){
+    //     shared_distance[y * B + x] = distance[idx_y * V + idx_x];
+    // }else{
+    //     shared_distance[y * B + x] = INF;
+    // } 
+    shared_distance[y * B + x] = distance[idx_y * V + idx_x];
     __syncthreads();
 
     // calculate for each row/col
     if(blockIdx.y == 0){        
-        // #pragma unroll 
+        #pragma unroll 
         for(int k = 0; k < B; k++){
             int temp = shared_p_distacne[y * B + k] + shared_distance[k * B + x];
             if(shared_distance[y * B + x] > temp){
@@ -112,7 +119,7 @@ __global__ void PHASE_TWO(int Round, int B, int* distance, int V){
             __syncthreads();
         }
     }else{            
-        // #pragma unroll 
+        #pragma unroll 
         for(int k = 0;  k < B; k++){
             int temp = shared_distance[y * B + k] + shared_p_distacne[k * B + x];
             if(shared_distance[y * B + x] > temp){
@@ -138,7 +145,7 @@ __global__ void PHASE_THREE(int Round, int B, int* distance, int V, int offset){
         return;
     }
 
-    extern __shared__ __align__(32) int shared[];
+    extern __shared__  int shared[];
     int* shared_row = shared;
     int* shared_col = shared + B*B;
     int x = threadIdx.x;
@@ -150,16 +157,18 @@ __global__ void PHASE_THREE(int Round, int B, int* distance, int V, int offset){
     int col_i = idx_y;
     int col_j = Round * B + x;
 
-    if(row_i < V && row_j < V){
-        shared_row[y * B + x] = distance[row_i * V + row_j];
-    }else{
-        shared_row[y * B + x] = INF;
-    } 
-    if(col_i < V && col_j < V){
-        shared_col[y * B + x] = distance[col_i * V + col_j];
-    }else{
-        shared_col[y * B + x] = INF;
-    }
+    // if(row_i < V && row_j < V){
+    //     shared_row[y * B + x] = distance[row_i * V + row_j];
+    // }else{
+    //     shared_row[y * B + x] = INF;
+    // } 
+    // if(col_i < V && col_j < V){
+    //     shared_col[y * B + x] = distance[col_i * V + col_j];
+    // }else{
+    //     shared_col[y * B + x] = INF;
+    // }
+    shared_row[y * B + x] = distance[row_i * V + row_j];
+    shared_col[y * B + x] = distance[col_i * V + col_j];
     __syncthreads();
 
     if(idx_y >= V || idx_x >= V) {
@@ -178,10 +187,26 @@ __global__ void PHASE_THREE(int Round, int B, int* distance, int V, int offset){
 }
 
 int main(int argc, char* argv[]) {
+    
+    // std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();  
     input(argv[1]);
-    int B = 32;
-    block_FW(B);
+    // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    // std::chrono::duration<double> dt = t1 - t0;
+    // printf("Input took %gs\n", dt.count());
+
+    int given_B = 32;
+    // std::chrono::steady_clock::time_point t0_c = std::chrono::steady_clock::now();
+    block_FW(given_B);
+    // std::chrono::steady_clock::time_point t1_c = std::chrono::steady_clock::now();
+    // std::chrono::duration<double> dt_c = t1_c - t0_c;
+    // printf("computing took %gs\n", dt_c.count());
+    
+    // std::chrono::steady_clock::time_point t0_o = std::chrono::steady_clock::now();
     output(argv[2]);
+    // std::chrono::steady_clock::time_point t1_o = std::chrono::steady_clock::now();
+    // std::chrono::duration<double> dt_o = t1_o - t0_o;
+    // printf("Output took %gs\n", dt_o.count());
+
     return 0;
 }
 
@@ -189,12 +214,15 @@ void input(char* infile) {
     FILE* file = fopen(infile, "rb");
     fread(&n, sizeof(int), 1, file);
     fread(&m, sizeof(int), 1, file);
-
+    unpad_n = n;
+    n = ((unpad_n/32)+1) * 32;
+    // diff_n = n - unpad_n;
 
     dist = (int*)malloc(n * n * sizeof(int));
     Result = (int*)malloc(n * n * sizeof(int));
+    // unpad_Result = (int*)malloc(unpad_n * unpad_n * sizeof(int));
 
-    // #pragma unroll 
+    #pragma unroll 
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
             if (i == j) {
@@ -215,13 +243,17 @@ void input(char* infile) {
 
 void output(char* outFileName) {
     FILE* outfile = fopen(outFileName, "w");
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
+    // #pragma unroll 
+    // #pragma GCC ivdep
+    for (int i = 0; i < unpad_n; ++i) {
+        for (int j = 0; j < unpad_n; ++j) {
             if(Result[i * n + j] >= INF){ 
                 Result[i * n + j] = INF;
-              }
+            }
+            // printf("%d\t", Result[i * n + j]);
         }
-        fwrite(&Result[i * n], sizeof(int), n, outfile);
+        // printf("\n");
+        fwrite(&Result[i * n], sizeof(int), unpad_n, outfile);
     }
     fclose(outfile);
 }
@@ -254,6 +286,7 @@ void block_FW(int B) {
         cudaStreamCreate(&stream);
 
         cudaMalloc(&device_distance[deviceID], n * n * sizeof(int));
+        // cudaMemcpyAsync(device_distance[deviceID], dist, n * n * sizeof(int), cudaMemcpyHostToDevice);
         cudaMemcpyAsync(device_distance[deviceID], dist, n * n * sizeof(int), cudaMemcpyHostToDevice, stream);
             
         int avg_blocks = round/num_gpus;
@@ -274,9 +307,18 @@ void block_FW(int B) {
         dim3 grid_p3(round, block_gpu);
         dim3 blk(B, B);
 
+        // std::chrono::steady_clock::time_point t0;
+        // std::chrono::steady_clock::time_point t1; //= std::chrono::steady_clock::now();
+        // std::chrono::duration<double> dt;// = t1 - t0;
+
         for (int i = 0; i < round; i++) {
             #pragma omp barrier
 
+            // PHASE_ONE<<<grid_p1, blk, B * B * sizeof(int)>>>(i, B, device_distance[deviceID], n);
+      
+            // PHASE_TWO<<<grid_p2, blk, B * B * sizeof(int) * 2>>>(i, B, device_distance[deviceID], n);
+      
+            // PHASE_THREE<<<grid_p3, blk, B * B * sizeof(int) * 2>>>(i, B, device_distance[deviceID], n, start_block);
             PHASE_ONE<<<grid_p1, blk, B * B * sizeof(int), stream>>>(i, B, device_distance[deviceID], n);
       
             PHASE_TWO<<<grid_p2, blk, B * B * sizeof(int) * 2, stream>>>(i, B, device_distance[deviceID], n);
@@ -295,8 +337,16 @@ void block_FW(int B) {
 
                     for(int j = 0 ; j < num_gpus; j++){
                         if(j != deviceID){
+                            
+                            // t0 = std::chrono::steady_clock::now();
+
+                            // cudaMemcpyAsync(device_distance[j]+trans_row*n*B, device_distance[deviceID]+trans_row*n*B,
+                            // trans_size, cudaMemcpyDeviceToDevice);
                             cudaMemcpyAsync(device_distance[j]+trans_row*n*B, device_distance[deviceID]+trans_row*n*B,
                             trans_size, cudaMemcpyDeviceToDevice, stream);
+
+                            // t1 = std::chrono::steady_clock::now();
+                            // dt += (t1 - t0);
                             
                         }
                     }
@@ -305,6 +355,9 @@ void block_FW(int B) {
             }
             cudaStreamSynchronize(stream); 
         }
+
+        // printf("D2D took %gs\n", dt.count());
+
         size_t size;
         if(n >= ((start_block+block_gpu)*B) ){
             size = sizeof(int)*n*B*block_gpu;

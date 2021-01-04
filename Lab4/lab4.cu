@@ -3,8 +3,6 @@
 #include <cassert>
 #include <zlib.h>
 #include <png.h>
-// #include <cuda.h>
-// #include <cuda_runtime.h>
 
 #define MASK_N 2
 #define MASK_X 5
