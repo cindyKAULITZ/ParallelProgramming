@@ -4,6 +4,7 @@
 #include "dataset.h"
 #include <iostream>
 #include "debug.h"
+#include <omp.h>
 
 double GetSquaredDistance(DatasetPointer train, size_t trainExample, DatasetPointer target, size_t targetExample) {
 	assert(train->cols == target->cols);
@@ -32,6 +33,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 				DEBUGKNN("Target %lu of %lu\n", targetExample, target->rows);
 #endif
 		//Find distance to all examples in the training set
+        #pragma omp parallel for
 		for (size_t trainExample = 0; trainExample < data->rows; trainExample++) {
 				squaredDistances[trainExample].first = GetSquaredDistance(data, trainExample, target, targetExample);
 				squaredDistances[trainExample].second = trainExample;

@@ -1,5 +1,5 @@
 CC=g++
-CC_FLAGS=-std=c++11 -Wall -g -O3  -DDEBUG_KNN
+CC_FLAGS=-std=c++11 -Wall -g -O3 -fopenmp -DDEBUG_KNN
 
 
 
@@ -20,7 +20,7 @@ test: $(TESTTARGETS)
 
 # Main target
 $(EXEC): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $(EXEC)
+	$(CC) $(OBJECTS) $(CC_FLAGS) -o $(EXEC)
 
 $(TESTTARGETS): bin/% : test/%.cpp $(TESTOBJECTS)
 	$(CC) $(CC_FLAGS) -o $@ $< $(TESTOBJECTS) -Isrc/
