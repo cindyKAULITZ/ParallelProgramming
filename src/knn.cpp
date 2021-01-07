@@ -32,7 +32,6 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 				DEBUGKNN("Target %lu of %lu\n", targetExample, target->rows);
 #endif
 		//Find distance to all examples in the training set
-        #pragma omp parallel for
 		for (size_t trainExample = 0; trainExample < data->rows; trainExample++) {
 				squaredDistances[trainExample].first = GetSquaredDistance(data, trainExample, target, targetExample);
 				squaredDistances[trainExample].second = trainExample;
