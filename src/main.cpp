@@ -5,24 +5,30 @@
 #include "Preprocessing.h"
 #include <new>
 #include <cstring>
+#include <chrono>
 
 using namespace std;
 
 const int nLabels = 10;
 
 void runKnn(char *trainFile, char *testFile, int k) {
+    std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
 	cout << "Reading train" <<endl;
 	DatasetPointer train = ReadDataset::read(trainFile, nLabels);
 	cout << "Reading test" <<endl;
 	DatasetPointer test = ReadDataset::read(testFile, nLabels);
 
 	MatrixPointer meanData = MeanNormalize(train);
-
-	KNN knn(train);
-
 	ApplyMeanNormalization(test, meanData);
 
+    std::chrono::steady_clock::time_point e = std::chrono::steady_clock::now();
+    cout << "Total preprocessing time: " << static_cast<double>(chrono::duration_cast<chrono::milliseconds>(e - b).count()) / 1000 << "s.\n";
+
+	KNN knn(train);
 	KNNResults rawResults = knn.run(k, test);
+
+
+    std::chrono::steady_clock::time_point b1 = std::chrono::steady_clock::now();
 	cout << "Consolidating results";
 	SingleExecutionResults top1 = rawResults.top1Result();
 	SingleExecutionResults top2 = rawResults.topXResult(2);
@@ -42,6 +48,8 @@ void runKnn(char *trainFile, char *testFile, int k) {
 		}
 		printf("\n");
 	}
+    std::chrono::steady_clock::time_point e1 = std::chrono::steady_clock::now();
+    cout << "Total output time: " << static_cast<double>(chrono::duration_cast<chrono::milliseconds>(e1 - b1).count()) / 1000 << "s.\n";
 }
 
 void findBestK(char *trainFile) {
@@ -78,6 +86,7 @@ void printUsageAndExit(char **argv);
 
 int main(int argc, char **argv)
 {
+    std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
 	if (argc != 3 && argc != 5) {
 		printUsageAndExit(argv);
 	}
@@ -90,6 +99,8 @@ int main(int argc, char **argv)
 	}
 	else
 		printUsageAndExit(argv);
+    std::chrono::steady_clock::time_point e = std::chrono::steady_clock::now();
+    cout << "Total run time: " << static_cast<double>(chrono::duration_cast<chrono::milliseconds>(e - b).count()) / 1000 << "s.\n";
 }
 
 void printUsageAndExit(char **argv) {
