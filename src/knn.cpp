@@ -20,38 +20,46 @@ double GetSquaredDistance(DatasetPointer train, size_t trainExample, DatasetPoin
 KNNResults KNN::run(int k, DatasetPointer target) {
 
 
+
 	DatasetPointer results(new dataset_base(target->rows,target->numLabels, target->numLabels));
 	results->clear();
 
 	//squaredDistances: first is the distance; second is the trainExample row
-	std::pair<double, int> squaredDistances[data->rows];
+    unsigned long long tRows = target->rows;
+    unsigned long long dRows = data->rows;
+	std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
 
-	for(size_t targetExample = 0; targetExample < target->rows; targetExample++) {
+#pragma omp parallel for
+	for(size_t targetExample = 0; targetExample < tRows; targetExample++) {
 
 #ifdef DEBUG_KNN
 		if (targetExample % 100 == 0)
-				DEBUGKNN("Target %lu of %lu\n", targetExample, target->rows);
+				DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
 #endif
 		//Find distance to all examples in the training set
-        #pragma omp parallel for
-		for (size_t trainExample = 0; trainExample < data->rows; trainExample++) {
-				squaredDistances[trainExample].first = GetSquaredDistance(data, trainExample, target, targetExample);
-				squaredDistances[trainExample].second = trainExample;
+		for (size_t trainExample = 0; trainExample < dRows; trainExample++) {
+				squaredDistances[targetExample * dRows + trainExample].first = GetSquaredDistance(data, trainExample, target, targetExample);
+				squaredDistances[targetExample * dRows + trainExample].second = trainExample;
 		}
+		sort(squaredDistances + targetExample * dRows, squaredDistances + targetExample * dRows + dRows);
+    }
+
+
+	for(size_t targetExample = 0; targetExample < tRows; targetExample++) {
+
 
 		//sort by closest distance
-		sort(squaredDistances, squaredDistances + data->rows);
 		
 		//count classes of nearest neighbors
 		size_t nClasses = target->numLabels;
-		int countClosestClasses[nClasses];
+		int * countClosestClasses = new int[nClasses];
 		for(size_t i = 0; i< nClasses; i++)
 			 countClosestClasses[i] = 0;
 
 		for (int i = 0; i < k; i++)
 		{
 
-			int currentClass = data->label(squaredDistances[i].second);
+			int currentClass = data->label(squaredDistances[targetExample * dRows + i].second);
 			countClosestClasses[currentClass]++;
 		}
 
