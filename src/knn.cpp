@@ -4,7 +4,6 @@
 #include "dataset.h"
 #include <iostream>
 #include "debug.h"
-#include <omp.h>
 
 double GetSquaredDistance(DatasetPointer train, size_t trainExample, DatasetPointer target, size_t targetExample) {
 	assert(train->cols == target->cols);
