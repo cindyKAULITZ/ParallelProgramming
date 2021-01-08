@@ -9,6 +9,7 @@
 static int total_dist_compute_time = 0;
 static int total_sort_time = 0;
 static int total_find_k_time = 0;
+static int computeTimes = 0;
 
 double GetSquaredDistance(DatasetPointer train, size_t trainExample, DatasetPointer target, size_t targetExample) {
 	assert(train->cols == target->cols);
@@ -18,6 +19,7 @@ double GetSquaredDistance(DatasetPointer train, size_t trainExample, DatasetPoin
 		difference = train->pos(trainExample, col) - target->pos(targetExample, col);
 		sum += difference * difference;
 	}
+    computeTimes += 1;
 	return sum;
 }
 
@@ -87,5 +89,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 
     std::chrono::steady_clock::time_point e = std::chrono::steady_clock::now();
     std::cout << "Total knn time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) / 1000 << "s.\n";
+    std::cout << "Avg dis time: " << static_cast<double>(total_dist_compute_time) / computeTimes / 1000 << "s.\n";
+
 	return KNNResults(results);
 }
