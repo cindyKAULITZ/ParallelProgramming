@@ -63,6 +63,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     }
 
 
+
 	for(size_t targetExample = 0; targetExample < tRows; targetExample++) {
 
 
