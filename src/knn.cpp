@@ -10,6 +10,9 @@
 #include <chrono>
 #include <omp.h>
 
+int totalCompute = 0;
+int computeTimes = 0;
+
 double intrinSub(std::array<double, 2> a, std::array<double, 2> b){
     __m128d minute = _mm_load_pd(a.data());
     __m128d sub = _mm_load_pd(b.data());
@@ -21,6 +24,7 @@ double intrinSub(std::array<double, 2> a, std::array<double, 2> b){
 }
 
 double GetSquaredDistance(DatasetPointer train, size_t trainExample, DatasetPointer target, size_t targetExample) {
+    std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
 	assert(train->cols == target->cols);
 	double sum = 0;
 	double difference;
@@ -33,6 +37,9 @@ double GetSquaredDistance(DatasetPointer train, size_t trainExample, DatasetPoin
 		difference = train->pos(trainExample, col) - target->pos(targetExample, col);
 		sum += difference * difference;
     }
+    std::chrono::steady_clock::time_point e = std::chrono::steady_clock::now();
+    totalCompute += std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count();
+    computeTimes += 1;
 	return sum;
 }
 
@@ -51,7 +58,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     const unsigned int trainTileSize = 64;
     const unsigned int testTileSize = 128;
     for(unsigned long long testTileBegin = 0; testTileBegin < dRows; testTileBegin += testTileSize){
-#pragma omp parallel for num_threads(8)
+//#pragma omp parallel for schedule(static) num_threads(8)
         for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
             for(size_t targetExample = testTileBegin; targetExample < tRows && targetExample < testTileBegin + testTileSize; targetExample++) {
                 /*
@@ -73,7 +80,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
     std::cout << "Compute Distance time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) / 1000 << "s.\n";
 
     std::chrono::steady_clock::time_point b1 = std::chrono::steady_clock::now();
-#pragma omp parallel for num_threads(8)
+//#pragma omp parallel for schedule(static) num_threads(8)
     for(size_t targetExample = 0; targetExample < tRows; targetExample++) {
         sort(squaredDistances + targetExample * dRows, squaredDistances + targetExample * dRows + dRows);
     }
@@ -81,7 +88,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
     std::cout << "Compute Sort time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(e1 - b1).count()) / 1000 << "s.\n";
 
 
-#pragma omp parallel for num_threads(8)
+#pragma omp parallel for schedule(static) num_threads(8)
 	for(size_t targetExample = 0; targetExample < tRows; targetExample++) {
 
 
@@ -110,6 +117,6 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
 	//copy expected labels:
 	for (size_t i = 0; i < target->rows; i++)
 		results->label(i) = target->label(i);
-
+    std::cout << "Average intrinsic time: " << static_cast<double>(totalCompute) / computeTimes  / 1000 << "s.\n";
 	return KNNResults(results);
 }
