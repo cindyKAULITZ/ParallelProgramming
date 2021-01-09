@@ -30,8 +30,6 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     }
 	//std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
     std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
-    const unsigned int trainTileSize = 64;
-    const unsigned int testTileSize = 256;
     //for(unsigned long long testTileBegin = 0; testTileBegin < dRows; testTileBegin += testTileSize){
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
