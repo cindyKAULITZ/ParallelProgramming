@@ -49,11 +49,29 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
             int d = 0;
             double sum = 0;
             for(; d < cols - 4; d += 4){
+                double minute[4] = { data->pos(trainExample, d), data->pos(trainExample, d + 1),
+                                     data->pos(trainExample, d + 2), data->pos(trainExample, d + 3)};
+                double subs[4] = { target->pos(trainExample, d), target->pos(trainExample, d + 1),
+                                   target->pos(trainExample, d + 2), target->pos(trainExample, d + 3)};
+                __m128d i_mi1 = _mm_load_pd(minute);
+                __m128d i_mi2 = _mm_load_pd(minute + 2);
+                __m128d i_sub1 = _mm_load_pd(subs);
+                __m128d i_sub2 = _mm_load_pd(subs + 2);
+                i_mi1 = _mm_sub_pd(i_mi1, i_sub1);
+                i_mi2 = _mm_sub_pd(i_mi2, i_sub2);
+                i_mi1 = _mm_mul_pd(i_mi1, i_mi1);
+                i_mi2 = _mm_mul_pd(i_mi2, i_mi2);
+                _mm_store_pd(subs, i_mi1);
+                _mm_store_pd(subs + 2, i_mi2);
+                /*
                 double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
                 double t1 = data->pos(trainExample, d + 1) - target->pos(targetExample, d + 1);
                 double t2 = data->pos(trainExample, d + 2) - target->pos(targetExample, d + 2);
                 double t3 = data->pos(trainExample, d + 3) - target->pos(targetExample, d + 3);
+                
                 sum += t0 * t0 + t1 * t1 + t2 * t2 + t3 * t3;
+                */
+                sum += subs[0] + subs[1] + subs[2] + subs[3];
             }
             for(; d < cols; ++d){
                 double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
