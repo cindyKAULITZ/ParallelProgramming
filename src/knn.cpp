@@ -24,7 +24,6 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     int dRows = data->rows;
     int cols = data->cols;
     double * dist = (double *)malloc(sizeof(double) * tRows * dRows);
-    double * ddist = (double *)malloc(sizeof(double) * tRows * k);
     long long * idx = (long long *)malloc(sizeof(long long) * tRows * dRows);
     for(long long t = 0;t < tRows;++t){
         std::iota(idx + t * dRows, idx + (t + 1) * dRows, 0);
@@ -124,5 +123,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
     for (int i = 0; i < tRows; i++)
         results->label(i) = target->label(i);
     std::cout << "Average intrinsic time: " << static_cast<double>(totalCompute) / computeTimes  / 1000 << "s.\n";
+    free(dist);
+    free(idx);
     return KNNResults(results);
 }
