@@ -58,11 +58,11 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
                 __m128d i_sub1 = _mm_load_pd(subs);
                 __m128d i_sub2 = _mm_load_pd(subs + 2);
                 i_mi1 = _mm_sub_pd(i_mi1, i_sub1);
-                i_mi2 = _mm_sub_pd(i_mi2, i_sub2);
                 i_mi1 = _mm_mul_pd(i_mi1, i_mi1);
+                i_mi2 = _mm_sub_pd(i_mi2, i_sub2);
                 i_mi2 = _mm_mul_pd(i_mi2, i_mi2);
+                i_mi1 = _mm_add_pd(i_mi1, i_mi2);
                 _mm_store_pd(subs, i_mi1);
-                _mm_store_pd(subs + 2, i_mi2);
                 /*
                 double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
                 double t1 = data->pos(trainExample, d + 1) - target->pos(targetExample, d + 1);
@@ -71,7 +71,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
                 
                 sum += t0 * t0 + t1 * t1 + t2 * t2 + t3 * t3;
                 */
-                sum += subs[0] + subs[1] + subs[2] + subs[3];
+                sum += subs[0] + subs[1];
             }
             for(; d < cols; ++d){
                 double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
