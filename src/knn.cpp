@@ -78,6 +78,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
                 return dist[targetExample * dRows + a] < dist[targetExample * dRows + b];
                 });
     }
+    /*
 #pragma omp parallel for num_threads(8)
     for(int t = 0; t < tRows * k; t++) {
         int targetExample = t / tRows;
@@ -86,6 +87,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
     }
     free(dist);
     dist = ddist;
+    */
 
     std::chrono::steady_clock::time_point e1 = std::chrono::steady_clock::now();
     std::cout << "Compute Sort time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(e1 - b1).count()) / 1000 << "s.\n";
