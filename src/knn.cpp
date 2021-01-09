@@ -42,11 +42,11 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     int * idx = new int [data->rows * target->rows];
         std::chrono::steady_clock::time_point c_start = std::chrono::steady_clock::now();
     
-#pragma omp parallel for num_threads(8)
+#pragma omp parallel for
 	for(unsigned long long targetExample = 0; targetExample < target->rows; targetExample++) {
         std::iota(idx + targetExample * data->rows, idx + (targetExample + 1) * data->rows, 0);
     }
-#pragma omp parallel for num_threads(8)
+#pragma omp parallel for
 	for(unsigned long long targetExample = 0; targetExample < target->rows; targetExample++) {
 /*
 #ifdef DEBUG_KNN
@@ -73,7 +73,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     total_dist_compute_time += std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count();
         std::chrono::steady_clock::time_point s_start = std::chrono::steady_clock::now();
     int dRows = data->rows;
-#pragma omp parallel for num_threads(8)
+#pragma omp parallel for
 	for(unsigned long long targetExample = 0; targetExample < target->rows; targetExample++) {
         //std::sort(squaredDistances + targetExample * data->rows, squaredDistances + (targetExample + 1) * data->rows);
         std::sort(idx + targetExample * data->rows, idx + (targetExample + 1) * data->rows,
