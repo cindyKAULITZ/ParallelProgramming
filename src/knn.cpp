@@ -35,7 +35,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
     for (int trainExample = 0; trainExample < dRows; trainExample++) {
-        #pragma omp parallel for schedule(static, 256) num_threads(8)
+        #pragma omp parallel for schedule(static, 256)
         for(int targetExample = 0; targetExample < tRows; targetExample++) {
             /*
 #ifdef DEBUG_KNN
@@ -89,7 +89,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
     std::cout << "Compute Distance time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) / 1000 << "s.\n";
 
     std::chrono::steady_clock::time_point b1 = std::chrono::steady_clock::now();
-#pragma omp parallel for schedule(static, 256) num_threads(8)
+#pragma omp parallel for schedule(static, 256)
     for(int targetExample = 0; targetExample < tRows; targetExample++) {
         std::partial_sort(idx + targetExample * dRows, 
                 idx + targetExample * dRows + k,
@@ -113,7 +113,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
     std::cout << "Compute Sort time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(e1 - b1).count()) / 1000 << "s.\n";
 
 
-#pragma omp parallel for schedule(static) num_threads(8)
+#pragma omp parallel for schedule(static)
     for(int targetExample = 0; targetExample < tRows; targetExample++) {
 
 
