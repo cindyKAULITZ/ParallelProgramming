@@ -33,9 +33,9 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //for(unsigned long long testTileBegin = 0; testTileBegin < dRows; testTileBegin += testTileSize){
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
-    for (int trainExample = 0; trainExample < dRows; trainExample++) {
-        #pragma omp parallel for schedule(static, 256)
-        for(int targetExample = 0; targetExample < tRows; targetExample++) {
+    for(int targetExample = 0; targetExample < tRows; targetExample++) {
+#pragma omp parallel for schedule(static, 256)
+        for (int trainExample = 0; trainExample < dRows; trainExample++) {
             /*
 #ifdef DEBUG_KNN
 if (targetExample % 100 == 0)
