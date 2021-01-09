@@ -24,9 +24,9 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     int dRows = data->rows;
     int cols = data->cols;
     double * dist = (double *)malloc(sizeof(double) * tRows * dRows);
-    double * ddist = (double *)malloc(sizeof(double) * tRows * k);
+    //double * ddist = (double *)malloc(sizeof(double) * tRows * k);
     long long * idx = (long long *)malloc(sizeof(long long) * tRows * dRows);
-    for(long long t = 0;t < tRows;++t){
+    for(int t = 0;t < tRows;++t){
         std::iota(idx + t * dRows, idx + (t + 1) * dRows, 0);
     }
 	//std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
@@ -49,6 +49,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
             int d = 0;
             double sum = 0;
             for(; d < cols - 4; d += 4){
+                
                 double minute[4] = { data->pos(trainExample, d), data->pos(trainExample, d + 1),
                                      data->pos(trainExample, d + 2), data->pos(trainExample, d + 3)};
                 double subs[4] = { target->pos(trainExample, d), target->pos(trainExample, d + 1),
@@ -64,6 +65,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
                 i_mi1 = _mm_add_pd(i_mi1, i_mi2);
                 _mm_store_pd(subs, i_mi1);
                 /*
+                
                 double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
                 double t1 = data->pos(trainExample, d + 1) - target->pos(targetExample, d + 1);
                 double t2 = data->pos(trainExample, d + 2) - target->pos(targetExample, d + 2);
@@ -142,5 +144,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
     for (int i = 0; i < tRows; i++)
         results->label(i) = target->label(i);
     std::cout << "Average intrinsic time: " << static_cast<double>(totalCompute) / computeTimes  / 1000 << "s.\n";
+    free(dist);
+    free(idx);
     return KNNResults(results);
 }
