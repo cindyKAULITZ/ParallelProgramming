@@ -8,6 +8,7 @@
 #include <smmintrin.h>
 #include <array>
 #include <chrono>
+#include <numeric>
 #include <omp.h>
 
 int totalCompute = 0;
@@ -53,7 +54,13 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 	//squaredDistances: first is the distance; second is the trainExample row
     unsigned long long tRows = target->rows;
     unsigned long long dRows = data->rows;
-	std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
+    double * dist = (double *)malloc(sizeof(double) * tRows * dRows);
+    double * ddist = (double *)malloc(sizeof(double) * tRows * dRows);
+    int * idx = (int *)malloc(sizeof(int) * tRows * dRows);
+    for(unsigned long long t = 0;t < tRows;++t){
+        std::iota(idx + t * dRows, idx + (t + 1) * dRows, 0);
+    }
+	//std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
     std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
     const unsigned int trainTileSize = 64;
     const unsigned int testTileSize = 128;
@@ -69,8 +76,8 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
 */
                 //Find distance to all examples in the training set
                 for (size_t trainExample = trainTileBegin; trainExample < trainTileBegin + trainTileSize && trainExample < dRows; trainExample++) {
-                    squaredDistances[targetExample * dRows + trainExample].first = GetSquaredDistance(data, trainExample, target, targetExample);
-                    squaredDistances[targetExample * dRows + trainExample].second = trainExample;
+                    dist[targetExample * dRows + trainExample] = GetSquaredDistance(data, trainExample, target, targetExample);
+                    //squaredDistances[targetExample * dRows + trainExample].second = trainExample;
                 }
             }
         }
@@ -80,10 +87,21 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
     std::cout << "Compute Distance time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) / 1000 << "s.\n";
 
     std::chrono::steady_clock::time_point b1 = std::chrono::steady_clock::now();
-//#pragma omp parallel for schedule(static) num_threads(8)
+#pragma omp parallel for schedule(static) num_threads(8)
     for(size_t targetExample = 0; targetExample < tRows; targetExample++) {
-        sort(squaredDistances + targetExample * dRows, squaredDistances + targetExample * dRows + dRows);
+        std::sort(idx + targetExample * dRows, idx + targetExample * dRows + dRows,
+                [&dist, &targetExample, &dRows](const int & a,const int & b){
+                    return dist[targetExample * dRows + a] < dist[targetExample * dRows + b];
+                });
     }
+    for(size_t targetExample = 0; targetExample < tRows; targetExample++) {
+        for(int i = 0;i < dRows;++i){
+            ddist[targetExample * dRows + i] = dist[idx[i]];
+        }
+    }
+    free(dist);
+    dist = ddist;
+
     std::chrono::steady_clock::time_point e1 = std::chrono::steady_clock::now();
     std::cout << "Compute Sort time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(e1 - b1).count()) / 1000 << "s.\n";
 
@@ -103,7 +121,8 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
 		for (int i = 0; i < k; i++)
 		{
 
-			int currentClass = data->label(squaredDistances[targetExample * dRows + i].second);
+
+			int currentClass = data->label(idx[targetExample * dRows + i]);
 			countClosestClasses[currentClass]++;
 		}
 
