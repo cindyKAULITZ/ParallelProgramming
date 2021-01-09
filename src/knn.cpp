@@ -6,6 +6,8 @@
 #include "debug.h"
 #include <chrono>
 #include <algorithm>
+#include <iterator>
+#include <numeric>
 #include <omp.h>
 
 static int total_dist_compute_time = 0;
@@ -35,9 +37,16 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     std::cout << "Total fill to zero time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(t_end - b).count()) / 1000 << "s.\n";
 
 	//squaredDistances: first is the distance; second is the trainExample row
-	std::pair<double, int> * squaredDistances = new std::pair<double, int>[data->rows * target->rows];
+	//std::pair<double, int> * squaredDistances = new std::pair<double, int>[data->rows * target->rows];
+    double * dist = new double [data->rows * target->rows];
+    int * idx = new int [data->rows * target->rows];
         std::chrono::steady_clock::time_point c_start = std::chrono::steady_clock::now();
-//#pragma omp parallel for num_threads(8)
+    
+#pragma omp parallel for num_threads(8)
+	for(unsigned long long targetExample = 0; targetExample < target->rows; targetExample++) {
+        std::iota(idx + targetExample * data->rows, idx + (targetExample + 1) * data->rows, 0);
+    }
+#pragma omp parallel for num_threads(8)
 	for(unsigned long long targetExample = 0; targetExample < target->rows; targetExample++) {
 /*
 #ifdef DEBUG_KNN
@@ -47,9 +56,15 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 */
 		//Find distance to all examples in the training set
 		for (unsigned long long trainExample = 0; trainExample < data->rows; trainExample++) {
-            std::cout << "is in\n";
-				squaredDistances[targetExample * data->rows + trainExample].first = GetSquaredDistance(data, trainExample, target, targetExample);
-				squaredDistances[targetExample * data->rows + trainExample].second = trainExample;
+				//squaredDistances[targetExample * data->rows + trainExample].first 
+                double sum = 0;
+                for(int i = 0; i < data->cols;++i){
+                    double sub = data->pos(trainExample, i) - target->pos(targetExample, i);
+                    sum += sub * sub;
+                }
+                dist[targetExample * data->rows + trainExample]  = sum;//GetSquaredDistance(data, trainExample, target, targetExample);
+				//squaredDistances
+                //idx[targetExample * data->rows + trainExample] = trainExample;
 		}
 
 		//sort by closest distance
@@ -57,10 +72,14 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     std::chrono::steady_clock::time_point c_end = std::chrono::steady_clock::now();
     total_dist_compute_time += std::chrono::duration_cast<std::chrono::milliseconds>(c_end - c_start).count();
         std::chrono::steady_clock::time_point s_start = std::chrono::steady_clock::now();
-//#pragma omp parallel for num_threads(8)
-    std::cout << "is in\n";
+    int dRows = data->rows;
+#pragma omp parallel for num_threads(8)
 	for(unsigned long long targetExample = 0; targetExample < target->rows; targetExample++) {
-        std::sort(squaredDistances + targetExample * data->rows, squaredDistances + (targetExample + 1) * data->rows);
+        //std::sort(squaredDistances + targetExample * data->rows, squaredDistances + (targetExample + 1) * data->rows);
+        std::sort(idx + targetExample * data->rows, idx + (targetExample + 1) * data->rows,
+                [&dist, &targetExample, dRows](int & a, int & b){
+                    return dist[targetExample * dRows + a] < dist[targetExample * dRows + b];
+                });
     }
         std::chrono::steady_clock::time_point s_end = std::chrono::steady_clock::now();
         total_sort_time += std::chrono::duration_cast<std::chrono::milliseconds>(s_end - s_start).count();
@@ -76,7 +95,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 		for (int i = 0; i < k; i++)
 		{
 
-			int currentClass = data->label(squaredDistances[i].second);
+			int currentClass = data->label(idx[targetExample * dRows + i]);
 			countClosestClasses[currentClass]++;
 		}
 
