@@ -5,6 +5,7 @@
 #include <iostream>
 #include "debug.h"
 #include <chrono>
+#include <algorithm>
 
 static int total_dist_compute_time = 0;
 static int total_sort_time = 0;
@@ -53,7 +54,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 
 		//sort by closest distance
         std::chrono::steady_clock::time_point s_start = std::chrono::steady_clock::now();
-		sort(squaredDistances, squaredDistances + data->rows);
+        std::partial_sort(squaredDistances, squaredDistances + k,squaredDistances + data->rows);
         std::chrono::steady_clock::time_point s_end = std::chrono::steady_clock::now();
         total_sort_time += std::chrono::duration_cast<std::chrono::milliseconds>(s_end - s_start).count();
 		
