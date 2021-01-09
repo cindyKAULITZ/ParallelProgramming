@@ -47,13 +47,6 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
             //squaredDistances[targetExample * dRows + trainExample].second = trainExample;
             int d = 0;
             double sum = 0;
-            for(; d < cols - 4; d += 4){
-                double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
-                double t1 = data->pos(trainExample, d + 1) - target->pos(targetExample, d + 1);
-                double t2 = data->pos(trainExample, d + 2) - target->pos(targetExample, d + 2);
-                double t3 = data->pos(trainExample, d + 3) - target->pos(targetExample, d + 3);
-                sum += t0 * t0 + t1 * t1 + t2 * t2 + t3 * t3;
-            }
             for(; d < cols; ++d){
                 double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
                 sum += t0 * t0;
