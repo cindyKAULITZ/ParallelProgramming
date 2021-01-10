@@ -19,7 +19,11 @@ matrix_base::matrix_base(size_t rows, size_t cols) {
 
 matrix_base::~matrix_base() {
 	DEBUGMEM("matrix: deleting: %lu x %lu from %p\n",rows,cols,data);
-	delete [] data;
+	if(data == NULL){
+		delete [] data;
+
+	}
+
 }
 
 void matrix_base::clear() {

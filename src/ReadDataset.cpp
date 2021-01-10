@@ -23,7 +23,8 @@ DatasetPointer ReadDataset::read(std::string filename, int nLabels) {
 
 	size_t nExamples, nDim;
 
-	myFile >> nExamples >> nDim;
+	myFile >> nExamples >> nDim >> nLabels;
+	printf("%d Examples, Dimension %d, Labels %d \n", nExamples, nDim, nLabels);
 
 	DatasetPointer result = DatasetPointer(new dataset_base(nExamples,nDim,nLabels));
 

@@ -43,6 +43,7 @@ public:
 	KNN (DatasetPointer train) { this->data = train; }
 
 	KNNResults run(int k, DatasetPointer target);
+	// KNNResults runCuda(int k, DatasetPointer target);
 
 private:
 	DatasetPointer data;

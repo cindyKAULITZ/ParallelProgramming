@@ -13,7 +13,7 @@
 
 class ReadDataset {
 public:
-	static DatasetPointer read(std::string filename, int nLabels);
+	static DatasetPointer read(std::string filename, int nLabel);
 };
 
 #endif /* READDATASET_H_ */

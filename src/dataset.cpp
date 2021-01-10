@@ -12,7 +12,9 @@ dataset_base::dataset_base(size_t rows, size_t cols, size_t numLabels) : matrix_
 
  dataset_base::~dataset_base() {
 	 DEBUGMEM("dataset: deleting: %lu in %p\n",rows,labels);
-	 delete [] labels;
+	 if(labels == NULL){
+	 	delete [] labels;
+	 }
 }
 
 void fillWithRandomIndices(int *indices, size_t nIndices) {

@@ -1,4 +1,5 @@
 #include "knn.h"
+#include "knnCuda.cuh"
 #include <vector>
 #include <algorithm>
 
