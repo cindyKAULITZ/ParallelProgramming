@@ -4,10 +4,10 @@
 #include "dataset.h"
 #include <iostream>
 #include "debug.h"
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-#include <cuda_runtime.h>
-#include <cuda.h>
+// #include <thrust/device_vector.h>
+// #include <thrust/host_vector.h>
+// #include <cuda_runtime.h>
+// #include <cuda.h>
 #include <cstdio>
 #include <cstdlib>
 

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "dataset.h"
 #include <iostream>
+#include <algorithm>
 #include "debug.h"
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
@@ -39,7 +40,7 @@ __device__ double CudaGetSqDist(int cols, int trainExample, int targetExample, d
 	return sum;
 }
 
-__global__ void CalDistance(int &dataCol, int &dataRow, int &e_t, int &e_b, int &r_t, int &r_b,
+__global__ void CalDistance(int dataCol, int dataRow, int e_t, int e_b, int r_t, int r_b,
 							double *train, double *target, 
 							double *sq_dist, int *sq_example){
 	
@@ -110,7 +111,7 @@ KNNResults KNNCUDA::run(int k, DatasetPointer target) {
 
     // thread limit 1024
     // block limit 65535
-    int block_size = 2000;
+    int block_size = 10000;
     int thread_size = 1024;
 
     
@@ -143,9 +144,9 @@ KNNResults KNNCUDA::run(int k, DatasetPointer target) {
     // printf("e_t %d, e_b %d, r_t %d, r_b %d\n", ele_per_threads,ele_per_blocks, res_thread, res_block);
     
     
-	int *d_data_rows ;
-	int *d_data_cols ;
-	int *d_target_rows ;
+	// int *d_data_rows ;
+	// int *d_data_cols ;
+	// int *d_target_rows ;
 	double *d_data_pos ;
 	double *d_target_pos ;
     
@@ -156,25 +157,25 @@ KNNResults KNNCUDA::run(int k, DatasetPointer target) {
     
     cudaSetDevice(0);
 
-    cudaMalloc((void **)&e_b,  sizeof(int));
-    cudaMalloc((void **)&e_t,  sizeof(int));
-    cudaMalloc((void **)&r_b,  sizeof(int));
-    cudaMalloc((void **)&r_t,  sizeof(int));
+    // cudaMalloc((void **)&e_b,  sizeof(int));
+    // cudaMalloc((void **)&e_t,  sizeof(int));
+    // cudaMalloc((void **)&r_b,  sizeof(int));
+    // cudaMalloc((void **)&r_t,  sizeof(int));
 
-    cudaMalloc((void **)&d_data_cols,  sizeof(int));
-    cudaMalloc((void **)&d_data_rows,  sizeof(int));
+    // cudaMalloc((void **)&d_data_cols,  sizeof(int));
+    // cudaMalloc((void **)&d_data_rows,  sizeof(int));
     cudaMalloc(&d_data_pos,  data_cols * data_rows * sizeof(double));
     cudaMalloc(&d_target_pos,  data_cols * target_rows * sizeof(double));
     cudaMalloc(&d_sd_dist,  data_rows * target_rows *  sizeof(double));
     cudaMalloc(&d_sd_example,  data_rows * target_rows * sizeof(int));
     
-    cudaMemcpy(e_b, &ele_per_blocks, sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(e_t, &ele_per_threads, sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(r_b, &res_block, sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(r_t, &res_thread, sizeof(int), cudaMemcpyHostToDevice);
+    // cudaMemcpy(e_b, &ele_per_blocks, sizeof(int), cudaMemcpyHostToDevice);
+    // cudaMemcpy(e_t, &ele_per_threads, sizeof(int), cudaMemcpyHostToDevice);
+    // cudaMemcpy(r_b, &res_block, sizeof(int), cudaMemcpyHostToDevice);
+    // cudaMemcpy(r_t, &res_thread, sizeof(int), cudaMemcpyHostToDevice);
 
-    cudaMemcpy(d_data_cols, &data_cols, sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_data_rows, &data_rows, sizeof(int), cudaMemcpyHostToDevice);
+    // cudaMemcpy(d_data_cols, &data_cols, sizeof(int), cudaMemcpyHostToDevice);
+    // cudaMemcpy(d_data_rows, &data_rows, sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_data_pos, data_pos,  data_cols * data_rows * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_target_pos, target_pos,  data_cols * target_rows * sizeof(double), cudaMemcpyHostToDevice);
     
@@ -182,33 +183,48 @@ KNNResults KNNCUDA::run(int k, DatasetPointer target) {
     // cudaMemcpy(d_sd_example, 0,  data_rows * sizeof(int), cudaMemcpyHostToDevice);
     
 
+    // std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 
-	CalDistance<<<block_size, thread_size>>>(*d_data_cols, *d_data_rows, *e_t, *e_b, *r_t, *r_b, d_data_pos, d_target_pos, d_sd_dist, d_sd_example);
+	CalDistance<<<block_size, thread_size>>>(data_cols, data_rows, ele_per_threads, ele_per_blocks, res_thread, res_block, d_data_pos, d_target_pos, d_sd_dist, d_sd_example);
 
-    
+    // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    // std::chrono::duration<double> dt = t1 - t0;
+    // printf("CalDistance took %gs\n", dt.count()); 
+
 	cudaMemcpy(squaredDistances_first , d_sd_dist, data_rows * target_rows * sizeof(double), cudaMemcpyDeviceToHost);
 	cudaMemcpy(squaredDistances_second , d_sd_example, data_rows * target_rows * sizeof(int), cudaMemcpyDeviceToHost);
     
-    cudaFree(d_data_cols);
-    cudaFree(d_data_rows);
+    // cudaFree(d_data_cols);
+    // cudaFree(d_data_rows);
     cudaFree(d_data_pos);
     cudaFree(d_target_pos);
     cudaFree(d_sd_dist);
     cudaFree(d_sd_example);
-
-    // #pragma omp parallel for shared(data, squaredDistances)
+    
+    // t0 = std::chrono::steady_clock::now();
+    #pragma omp parallel for shared(data, squaredDistances)
 	for(size_t targetExample = 0; targetExample < target->rows; targetExample++) {
 
-        
+        // std::chrono::steady_clock::time_point t_cpy1 = std::chrono::steady_clock::now();
         #pragma unroll
         for (int j = 0; j < data->rows; j++){
-            squaredDistances[squaredDistances_second[targetExample *data->rows + j]].first = squaredDistances_first[targetExample *data->rows + j];
-            squaredDistances[squaredDistances_second[targetExample *data->rows + j]].second = squaredDistances_second[targetExample *data->rows + j];
+            int idx = squaredDistances_second[targetExample *data->rows + j];
+            squaredDistances[squaredDistances_second[idx]].first = squaredDistances_first[targetExample *data->rows + j];
+            squaredDistances[squaredDistances_second[idx]].second = idx;
             
         }
+        // std::chrono::steady_clock::time_point t_cpy0 = std::chrono::steady_clock::now();
+        // std::chrono::duration<double> t_cpy = t_cpy0 - t_cpy1;
+        // printf("Copy took %gs\n", t_cpy.count()); 
 
 		//sort by closest distance
-        sort(squaredDistances, squaredDistances + data->rows);
+        // std::chrono::steady_clock::time_point t_sort1 = std::chrono::steady_clock::now();
+
+        // sort(squaredDistances, squaredDistances + data->rows);
+        partial_sort(squaredDistances, squaredDistances + k, squaredDistances + data->rows);
+        // std::chrono::steady_clock::time_point t_sort0 = std::chrono::steady_clock::now();
+        // std::chrono::duration<double> t_sort = t_sort0 - t_sort1;
+        // printf("Copy took %gs\n", t_sort.count()); 
 
 		//count classes of nearest neighbors
 		size_t nClasses = target->numLabels;
@@ -227,8 +243,12 @@ KNNResults KNNCUDA::run(int k, DatasetPointer target) {
 		for(size_t i = 0; i < nClasses; i++)
 		{
             results->pos(targetExample, i) = ((double)countClosestClasses[i]) / k;
-		}
-	}
+        }
+        
+    }
+    // t1 = std::chrono::steady_clock::now();
+    // dt = t1 - t0;
+    // printf("sort and findresult took %gs\n", dt.count()); 
 
     //copy expected labels:
     #pragma omp parallel for nowait
@@ -242,3 +262,4 @@ KNNResults KNNCUDA::run(int k, DatasetPointer target) {
 
 	return KNNResults(results);
 }
+
