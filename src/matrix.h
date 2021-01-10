@@ -24,6 +24,8 @@ public:
 
 	double& pos (size_t row, size_t col) {return data[row * cols + col]; }
 
+    double * getMat(){ return data; }
+
 	matrix_base(size_t rows, size_t cols);
 	virtual ~matrix_base();
 

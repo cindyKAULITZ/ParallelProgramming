@@ -1,5 +1,5 @@
-CC=g++
-CC_FLAGS=-std=c++11 -Wall -g -O3 -fopenmp -DDEBUG_KNN
+CC=nvcc -c
+CC_FLAGS=-std=c++11 -Wall -g -O3 -fopenmp -DDEBUG_KNN -Xcompiler="-fopenmp" -Xptxas="-v"
 
 
 
