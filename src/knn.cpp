@@ -33,25 +33,32 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //for(unsigned long long testTileBegin = 0; testTileBegin < dRows; testTileBegin += testTileSize){
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
-    for (int trainExample = 0; trainExample < dRows; trainExample++) {
-        #pragma omp parallel for schedule(static, 256)
-        for(int targetExample = 0; targetExample < tRows; targetExample++) {
-            /*
-#ifdef DEBUG_KNN
-if (targetExample % 100 == 0)
-DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
-#endif
-*/
-            //Find distance to all examples in the training set
-            //dist[targetExample * dRows + trainExample] = GetSquaredDistance(data, trainExample, target, targetExample);
-            //squaredDistances[targetExample * dRows + trainExample].second = trainExample;
-            int d = 0;
-            double sum = 0;
-            for(; d < cols; ++d){
-                double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
-                sum += t0 * t0;
+    if(dRows > tRows){
+        for (int trainExample = 0; trainExample < dRows; trainExample++) {
+#pragma omp parallel for schedule(static, 256)
+            for(int targetExample = 0; targetExample < tRows; targetExample++) {
+                int d = 0;
+                double sum = 0;
+                for(; d < cols; ++d){
+                    double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
+                    sum += t0 * t0;
+                }
+                dist[targetExample * dRows + trainExample] = sum;
             }
-            dist[targetExample * dRows + trainExample] = sum;
+        }
+    }
+    else{
+        for(int targetExample = 0; targetExample < tRows; targetExample++) {
+#pragma omp parallel for schedule(static, 256)
+            for (int trainExample = 0; trainExample < dRows; trainExample++) {
+                int d = 0;
+                double sum = 0;
+                for(; d < cols; ++d){
+                    double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
+                    sum += t0 * t0;
+                }
+                dist[targetExample * dRows + trainExample] = sum;
+            }
         }
     }
     //}
