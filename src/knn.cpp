@@ -45,15 +45,49 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //for(unsigned long long testTileBegin = 0; testTileBegin < dRows; testTileBegin += testTileSize){
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
-    
     Halide::Buffer<double> m1(testMat, cols, tRows, "train");
     Halide::Buffer<double> m2(trainMat, dRows, cols, "test");
     Halide::Buffer<double> dist_B(dist, dRows, tRows, "dist");
-    Halide::Var x, y;
-    Halide::Func mul;
-    Halide::RDom r(0, cols);
+    Halide::Var x("train-row"), y("test-row"), kk("col");
+    Halide::Func mul("multiplication"), mat1("test-mat"), mat2("train-mat");
+    //Halide::Func cube("cube");
+    Halide::RDom r(0, cols, "num-cols");
+    //cube(x, y, kk) = m1(kk, y) - m2(x, kk);
+    //cube.print_loop_nest();
+    //printf("\n");
+    //mat1(kk, y) = m1(kk, y);
+    //mat2(x, kk) = m2(x, kk);
     mul(x, y) = Halide::cast<double>(0);
     mul(x, y) += (m1(r, y) - m2(x, r)) * (m1(r, y) - m2(x, r));
+    //mul(x, y) += cube(x, y, r) * cube(x, y, r);
+    //Halide::Var yin, yout;
+    //mul.split(y, yout, yin, 256);
+    //mul.reorder(yout, x, yin);
+    //mul.parallel(yout);
+    //cube.compute_at(mul, y);
+    //cube.parallel(x).vectorize(kk, 4);
+    
+    //Halide::Var yinner, youter;
+    //mul.split(x, xouter, xinner, 4);
+    //mul.vectorize(xinner);
+    //
+    /*
+    cube.compute_at(mul, x);
+    mul.split(y, youter, yinner, 256);
+    mul.reorder(youter, x, yinner);
+    mul.parallel(youter);
+    mul.vectorize(yinner);
+    */
+
+    mul.print_loop_nest();
+    printf("\n");
+
+    //Halide::Var yinner, youter;
+    //mul.split(y, youter, yinner, 4);
+    //mul.unroll(yinner);
+    //mul.parallel(x);
+
+
     mul.realize(dist_B);
     //}
 
