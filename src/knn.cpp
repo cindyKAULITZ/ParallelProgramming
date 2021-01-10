@@ -7,12 +7,21 @@
 #include <emmintrin.h>
 #include <smmintrin.h>
 #include <array>
+#include <Halide.h>
 #include <chrono>
 #include <numeric>
 #include <omp.h>
 
 int totalCompute = 0;
 int computeTimes = 0;
+
+void transformMatrix(double * dst,DatasetPointer src, int rows, int cols){
+    for(int i = 0; i < rows; ++i){
+        for(int j = 0; j < cols; ++j){
+            dst[j * rows + i] = src->pos(i, j);
+        }
+    }
+}
 
 KNNResults KNN::run(int k, DatasetPointer target) {
 
@@ -24,6 +33,9 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     int dRows = data->rows;
     int cols = data->cols;
     double * dist = (double *)malloc(sizeof(double) * tRows * dRows);
+    double * trainMat = (double *)malloc(sizeof(double) * dRows * cols);
+    transformMatrix(trainMat, data, dRows, cols);
+    double * testMat = target->getMat();
     long long * idx = (long long *)malloc(sizeof(long long) * tRows * dRows);
     for(long long t = 0;t < tRows;++t){
         std::iota(idx + t * dRows, idx + (t + 1) * dRows, 0);
@@ -33,27 +45,16 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //for(unsigned long long testTileBegin = 0; testTileBegin < dRows; testTileBegin += testTileSize){
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
-    for (int trainExample = 0; trainExample < dRows; trainExample++) {
-        #pragma omp parallel for schedule(static, 256)
-        for(int targetExample = 0; targetExample < tRows; targetExample++) {
-            /*
-#ifdef DEBUG_KNN
-if (targetExample % 100 == 0)
-DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
-#endif
-*/
-            //Find distance to all examples in the training set
-            //dist[targetExample * dRows + trainExample] = GetSquaredDistance(data, trainExample, target, targetExample);
-            //squaredDistances[targetExample * dRows + trainExample].second = trainExample;
-            int d = 0;
-            double sum = 0;
-            for(; d < cols; ++d){
-                double t0 = data->pos(trainExample, d) - target->pos(targetExample, d);
-                sum += t0 * t0;
-            }
-            dist[targetExample * dRows + trainExample] = sum;
-        }
-    }
+    
+    Halide::Buffer<double> m1(testMat, cols, tRows, "train");
+    Halide::Buffer<double> m2(trainMat, dRows, cols, "test");
+    Halide::Buffer<double> dist_B(dist, dRows, tRows, "dist");
+    Halide::Var x, y;
+    Halide::Func mul;
+    Halide::RDom r(0, cols);
+    mul(x, y) = Halide::cast<double>(0);
+    mul(x, y) += (m1(r, y) - m2(x, r)) * (m1(r, y) - m2(x, r));
+    mul.realize(dist_B);
     //}
 
     //}
