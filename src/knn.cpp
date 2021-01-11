@@ -9,10 +9,46 @@
 #include <array>
 #include <chrono>
 #include <numeric>
-#include <omp.h>
+#include <thread>
+#include <mutex>
 
 int totalCompute = 0;
 int computeTimes = 0;
+int i = 0, j;
+
+static double * train;
+static double * test;
+static double * dist;
+
+static int tRows;
+static int dRows;
+static int cols;
+
+std::mutex mu1;
+
+void computeDist(int beg){
+    int local_i = 0, local_j = beg;
+    while(local_i < tRows && local_j < dRows){
+        double sum = 0.0;
+        for(int lc = 0; lc < cols;++lc){
+            double t0 = train[local_j * cols + lc] - test[local_i * cols + lc];
+            sum += t0 * t0;
+        }
+        dist[local_i * dRows + local_j] = sum;
+        mu1.lock(); 
+        if(local_i == i && local_j == j){
+            j += 1;
+        }
+        local_i = i;
+        local_j = j;
+        j += 1;
+        if(j == dRows){
+            j = 0;
+            i += 1;
+        }
+        mu1.unlock();
+    }
+}
 
 KNNResults KNN::run(int k, DatasetPointer target) {
 
@@ -20,11 +56,18 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 	results->clear();
 
 	//squaredDistances: first is the distance; second is the trainExample row
-    int tRows = target->rows;
-    int dRows = data->rows;
-    int cols = data->cols;
-    double * dist = (double *)malloc(sizeof(double) * tRows * dRows);
+    tRows = target->rows;
+    dRows = data->rows;
+    cols = data->cols;
+    dist = (double *)malloc(sizeof(double) * tRows * dRows);
+    train = data->getMat();
+    test = target->getMat();
     long long * idx = (long long *)malloc(sizeof(long long) * tRows * dRows);
+
+    const int num_cores = std::thread::hardware_concurrency();
+
+    std::cout << num_cores << "\n";
+
     for(long long t = 0;t < tRows;++t){
         std::iota(idx + t * dRows, idx + (t + 1) * dRows, 0);
     }
@@ -33,18 +76,21 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //for(unsigned long long testTileBegin = 0; testTileBegin < dRows; testTileBegin += testTileSize){
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
+    std::thread pool[12];
+    j = num_cores < dRows ? num_cores : 0;
+    if(j == 0){
+        i = 1;
+    }
+    for(int i = 0;i < num_cores;++i){
+        pool[i] = std::thread(computeDist, i);
+    }
+    for(int i = 0;i < num_cores;++i){
+        pool[i].join();
+    }
+    /*
     for (int trainExample = 0; trainExample < dRows; trainExample++) {
-        #pragma omp parallel for schedule(static, 256)
+        
         for(int targetExample = 0; targetExample < tRows; targetExample++) {
-            /*
-#ifdef DEBUG_KNN
-if (targetExample % 100 == 0)
-DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
-#endif
-*/
-            //Find distance to all examples in the training set
-            //dist[targetExample * dRows + trainExample] = GetSquaredDistance(data, trainExample, target, targetExample);
-            //squaredDistances[targetExample * dRows + trainExample].second = trainExample;
             int d = 0;
             double sum = 0;
             for(; d < cols; ++d){
@@ -53,21 +99,25 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
             }
             dist[targetExample * dRows + trainExample] = sum;
         }
+        
     }
+    */
     //}
 
     //}
     std::chrono::steady_clock::time_point e = std::chrono::steady_clock::now();
     std::cout << "Compute Distance time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count()) / 1000 << "s.\n";
 
+    double * ddist = dist;
+    int ddRows = dRows;
     std::chrono::steady_clock::time_point b1 = std::chrono::steady_clock::now();
 #pragma omp parallel for schedule(static, 256)
     for(int targetExample = 0; targetExample < tRows; targetExample++) {
         std::partial_sort(idx + targetExample * dRows, 
                 idx + targetExample * dRows + k,
                 idx + (targetExample + 1) * dRows,
-                [&dist, &targetExample, &dRows](const int & a,const int & b){
-                return dist[targetExample * dRows + a] < dist[targetExample * dRows + b];
+                [&ddist, &targetExample, &ddRows](const int & a,const int & b){
+                return ddist[targetExample * ddRows + a] < ddist[targetExample * ddRows + b];
                 });
     }
     /*

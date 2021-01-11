@@ -20,7 +20,7 @@ test: $(TESTTARGETS)
 
 # Main target
 $(EXEC): $(OBJECTS)
-	$(CC) $(OBJECTS) $(CC_FLAGS) -o $(EXEC)
+	$(CC) $(OBJECTS) $(CC_FLAGS) -o $(EXEC) -lpthread
 
 $(TESTTARGETS): bin/% : test/%.cpp $(TESTOBJECTS)
 	$(CC) $(CC_FLAGS) -o $@ $< $(TESTOBJECTS) -Isrc/
@@ -28,7 +28,7 @@ $(TESTTARGETS): bin/% : test/%.cpp $(TESTOBJECTS)
 
 # To obtain object files
 $(OBJECTS): obj/%.o : src/%.cpp
-	$(CC) -c $(CC_FLAGS) $< -o $@
+	$(CC) -c $(CC_FLAGS) $< -o $@ -lpthread
 
 # To remove generated files
 clean:
