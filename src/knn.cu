@@ -120,7 +120,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     dim3 numGrid(1, (dRows + block - 1) / block);
     //std::cout << "is in 4\n";
          
-    for(; i < tRows; i += block){
+    for(; i < tRows - block; i += block){
         //std::cout << i << " " << tRows << " " << cols << " " << dRows << "\n";
         compute_dist<<<numGrid, numBlock, 2 * block * cols>>>(d_train, d_test, d_dist, i, dRows, cols, tRows);
         cudaMemcpy(dist + i * dRows, d_dist, sizeof(float) * block * dRows, cudaMemcpyDeviceToHost);
@@ -130,7 +130,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //cudaMemcpy(dist, d_dist, sizeof(float) * tRows * dRows, cudaMemcpyDeviceToHost);
 
     //std::cout << "is in\n";
-    /*
+    
     for(;i < tRows;++i){
         for(int j = 0;j < dRows; ++j){
             float sum = 0.0;
@@ -141,7 +141,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
             dist[i * dRows + j] = sum;
         }
     }
-    */
+    
     //print(dist, tRows, dRows);
 
 	//std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
