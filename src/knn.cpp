@@ -11,10 +11,11 @@
 #include <numeric>
 #include <thread>
 #include <mutex>
+#include <omp.h>
 
 int totalCompute = 0;
 int computeTimes = 0;
-int i = 0, j;
+int i = 0;
 
 static double * train;
 static double * test;
@@ -24,30 +25,48 @@ static int tRows;
 static int dRows;
 static int cols;
 
+//int chunck = 256;
+
 std::mutex mu1;
 
-void computeDist(int beg){
-    int local_i = 0, local_j = beg;
-    while(local_i < tRows && local_j < dRows){
-        double sum = 0.0;
-        for(int lc = 0; lc < cols;++lc){
-            double t0 = train[local_j * cols + lc] - test[local_i * cols + lc];
-            sum += t0 * t0;
+void computeDist(int beg, int chunck){
+    int local_i = beg;
+    for(; local_i < local_i + chunck && local_i < tRows; ++ local_i){
+        for(int lj = 0; lj < dRows; ++lj){
+            double sum = 0.0;
+            for(int lc = 0; lc < cols;++lc){
+                double t0 = train[lj * cols + lc] - test[local_i * cols + lc];
+                sum += t0 * t0;
+            }
+            dist[local_i * dRows + lj] = sum;
         }
-        dist[local_i * dRows + local_j] = sum;
+    }
+
+    /*
+    int local_i = beg;
+    while(local_i < tRows){
+        //printf("%d\n", local_i);
+        
+        for(; local_i < local_i + chunck && local_i < tRows; ++ local_i){
+            for(int lj = 0; lj < dRows; ++lj){
+                double sum = 0.0;
+                for(int lc = 0; lc < cols;++lc){
+                    double t0 = train[lj * cols + lc] - test[local_i * cols + lc];
+                    sum += t0 * t0;
+                }
+                dist[local_i * dRows + lj] = sum;
+            }
+        }
+        
         mu1.lock(); 
-        if(local_i == i && local_j == j){
-            j += 1;
+        if(local_i == i){
+            i += chunck;
         }
         local_i = i;
-        local_j = j;
-        j += 1;
-        if(j == dRows){
-            j = 0;
-            i += 1;
-        }
+        i += chunck;
         mu1.unlock();
     }
+    */
 }
 
 KNNResults KNN::run(int k, DatasetPointer target) {
@@ -77,12 +96,30 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
     std::thread pool[12];
-    j = num_cores < dRows ? num_cores : 0;
-    if(j == 0){
-        i = 1;
-    }
+    int dataBegin[12];
+    int sizeAry[12];
+    int size = tRows / num_cores;
+    int re = tRows % num_cores;
     for(int i = 0;i < num_cores;++i){
-        pool[i] = std::thread(computeDist, i);
+        dataBegin[i] = 0;
+        sizeAry[i] = size;
+    }
+
+    for(int i = 1;i < num_cores;++i){
+        if(re > 0){
+            dataBegin[i] = dataBegin[i - 1] + size + 1;
+            sizeAry[i] += 1;
+            re -= 1;
+        }
+        else{
+            dataBegin[i] = dataBegin[i - 1] + size;
+        }
+    }
+    
+
+    i = num_cores < tRows ? num_cores : 0;
+    for(int i = 0;i < num_cores;++i){
+        pool[i] = std::thread(computeDist, dataBegin[i], sizeAry[i]);
     }
     for(int i = 0;i < num_cores;++i){
         pool[i].join();
