@@ -15,6 +15,7 @@
 
 int totalCompute = 0;
 int computeTimes = 0;
+int comunicateTimes = 0;
 int i = 0;
 int j;
 
@@ -26,7 +27,7 @@ static int tRows;
 static int dRows;
 static int cols;
 
-int chunck = 1024;
+int chunck = 1;
 
 std::mutex mu1;
 
@@ -45,7 +46,7 @@ void computeDist(int beg){
     }
     */
     
-    int local_i = 0, local_j = beg;
+    int local_i = beg;
     while(local_i < tRows){
         //printf("%d\n", local_i);
         
@@ -60,18 +61,22 @@ void computeDist(int beg){
             }
         }
         
+        std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
         mu1.lock(); 
         if(local_i == i){
             i += chunck;
         }
         local_i = i;
         i += chunck;
+        std::chrono::steady_clock::time_point e = std::chrono::steady_clock::now();
+        computeTimes += std::chrono::duration_cast<std::chrono::milliseconds>(e - b).count();
         mu1.unlock();
     }
 }
 
 KNNResults KNN::run(int k, DatasetPointer target) {
 
+    std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
 	DatasetPointer results(new dataset_base(target->rows,target->numLabels, target->numLabels));
 	results->clear();
 
@@ -92,7 +97,6 @@ KNNResults KNN::run(int k, DatasetPointer target) {
         std::iota(idx + t * dRows, idx + (t + 1) * dRows, 0);
     }
 	//std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
-    std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
     //for(unsigned long long testTileBegin = 0; testTileBegin < dRows; testTileBegin += testTileSize){
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
@@ -119,10 +123,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     }
     
     */
-    j = num_cores < tRows ? num_cores : 0;
-    if(j == 0){
-        i += 1;
-    }
+    i = num_cores < tRows ? num_cores : 0;
     for(int i = 0;i < num_cores;++i){
         pool[i] = std::thread(computeDist, i);
     }
@@ -207,7 +208,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //copy expected labels:
     for (int i = 0; i < tRows; i++)
         results->label(i) = target->label(i);
-    //std::cout << "Average intrinsic time: " << static_cast<double>(totalCompute) / computeTimes  / 1000 << "s.\n";
+    std::cout << "Comunication time: " << static_cast<double>(computeTimes) / 1000 << "s.\n";
     free(dist);
     free(idx);
     return KNNResults(results);
