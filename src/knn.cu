@@ -15,22 +15,32 @@
 int totalCompute = 0;
 int computeTimes = 0;
 
-extern __shared__ float sm[];
 
 __global__ void compute_dist(float * train, float * target, float * dist, int test_idx, int train_end, int cols, int test_end){
-    //float * train_sm = sm;
-    //float * test_sm = sm + cols * blockDim.y;
+    extern __shared__ float sm[];
+    float * train_sm = (float *)sm;
+    float * test_sm = (float *)&sm[cols * blockDim.y];
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     int test_y = test_idx + threadIdx.y;
-    int block_y = blockDim.y;
     if(y < train_end){
-        /*    
+            
         for(int i = 0;i < cols;++i){
-            train_sm[threadIdx.y * cols + i] = train[train_y * cols + i];
-            test_sm[threadIdx.y * cols + i] = target[y * cols + i];
+            train_sm[threadIdx.y * cols + i] = train[y * cols + i];
+            test_sm[threadIdx.y * cols + i] = target[test_y * cols + i];
         }
         __syncthreads();
-        */
+        for(int i = 0; i < blockDim.y; ++i){
+            float sum = 0.0;
+            if(test_idx + i < test_end){
+                for(int j = 0;j < cols;++j){
+                    float t0 = train_sm[threadIdx.y * cols + j] - test_sm[i * cols + j];
+                    sum += t0 * t0;
+                }
+                dist[i * train_end + y] = sum;
+            }
+        }
+        
+        /*
         for(int i = 0; i < blockDim.y; ++ i){
             float sum = 0.0;
             if(test_idx + i < test_end){
@@ -41,7 +51,7 @@ __global__ void compute_dist(float * train, float * target, float * dist, int te
                 dist[i * train_end + y] = sum;
             }
         }
-        
+        */
 
     }
     
@@ -122,7 +132,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
          
     for(; i < tRows - block; i += block){
         //std::cout << i << " " << tRows << " " << cols << " " << dRows << "\n";
-        compute_dist<<<numGrid, numBlock, 2 * block * cols>>>(d_train, d_test, d_dist, i, dRows, cols, tRows);
+        compute_dist<<<numGrid, numBlock, 2 * block * cols * sizeof(float)>>>(d_train, d_test, d_dist, i, dRows, cols, tRows);
         cudaMemcpy(dist + i * dRows, d_dist, sizeof(float) * block * dRows, cudaMemcpyDeviceToHost);
     }
     
