@@ -5,15 +5,17 @@
 #include "Preprocessing.h"
 #include <new>
 #include <cstring>
+#include <chrono>
 
 using namespace std;
 
 const int nLabels = 10;
 
 void runKnn(char *trainFile, char *testFile, int k) {
-	cout << "Reading train" <<endl;
+    chrono::steady_clock::time_point b = chrono::steady_clock::now();
+//	cout << "Reading train" <<endl;
 	DatasetPointer train = ReadDataset::read(trainFile, nLabels);
-	cout << "Reading test" <<endl;
+	//cout << "Reading test" <<endl;
 	DatasetPointer test = ReadDataset::read(testFile, nLabels);
 
 	MatrixPointer meanData = MeanNormalize(train);
@@ -21,6 +23,10 @@ void runKnn(char *trainFile, char *testFile, int k) {
 	KNN knn(train);
 
 	ApplyMeanNormalization(test, meanData);
+
+    chrono::steady_clock::time_point e = chrono::steady_clock::now();
+    cout << "Pre-precessing time: " << static_cast<double>(chrono::duration_cast<chrono::milliseconds>(e - b).count()) / 1000
+        << "s.\n";
 
 	KNNResults rawResults = knn.run(k, test);
 	cout << "Consolidating results";
@@ -31,8 +37,8 @@ void runKnn(char *trainFile, char *testFile, int k) {
 	printf("Success Rate: %lf, Rejection Rate: %lf\n", top1.successRate(), top1.rejectionRate());
 	printf("Top 2 Success Rate: %lf\n", top2.successRate());
 	printf("Top 3 Success Rate: %lf\n", top3.successRate());
-	printf("Confusion matrix:\n");
-
+	//printf("Confusion matrix:\n");
+    /*
 	MatrixPointer confusionMatrix = rawResults.getConfusionMatrix();
 
 	for(size_t i = 0; i< confusionMatrix->rows; i++) {
@@ -42,6 +48,7 @@ void runKnn(char *trainFile, char *testFile, int k) {
 		}
 		printf("\n");
 	}
+    */
 }
 
 void findBestK(char *trainFile) {

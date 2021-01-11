@@ -16,6 +16,7 @@ int computeTimes = 0;
 
 KNNResults KNN::run(int k, DatasetPointer target) {
 
+    std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
 	DatasetPointer results(new dataset_base(target->rows,target->numLabels, target->numLabels));
 	results->clear();
 
@@ -29,7 +30,6 @@ KNNResults KNN::run(int k, DatasetPointer target) {
         std::iota(idx + t * dRows, idx + (t + 1) * dRows, 0);
     }
 	//std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
-    std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
     //for(unsigned long long testTileBegin = 0; testTileBegin < dRows; testTileBegin += testTileSize){
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
@@ -77,16 +77,6 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
                 return dist[targetExample * dRows + a] < dist[targetExample * dRows + b];
                 });
     }
-    /*
-#pragma omp parallel for num_threads(8)
-    for(int t = 0; t < tRows * k; t++) {
-        int targetExample = t / tRows;
-        int i = t % tRows;
-        ddist[targetExample * k + i] = dist[idx[i]];
-    }
-    free(dist);
-    dist = ddist;
-    */
 
     std::chrono::steady_clock::time_point e1 = std::chrono::steady_clock::now();
     std::cout << "Compute Sort time: " << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(e1 - b1).count()) / 1000 << "s.\n";
@@ -122,7 +112,7 @@ DEBUGKNN("Target %lu of %lu\n", targetExample, tRows);
     //copy expected labels:
     for (int i = 0; i < tRows; i++)
         results->label(i) = target->label(i);
-    std::cout << "Average intrinsic time: " << static_cast<double>(totalCompute) / computeTimes  / 1000 << "s.\n";
+    //std::cout << "Average intrinsic time: " << static_cast<double>(totalCompute) / computeTimes  / 1000 << "s.\n";
     free(dist);
     free(idx);
     return KNNResults(results);
