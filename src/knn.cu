@@ -57,15 +57,15 @@ void print(float * data, int row, int col){
 KNNResults KNN::run(int k, DatasetPointer target) {
 
     
-    std::cout << "is in 1\n";
+    //std::cout << "is in 1\n";
 	DatasetPointer results(new dataset_base(target->rows,target->numLabels, target->numLabels));
 	results->clear();
 
 	//squaredDistances: first is the distance; second is the trainExample row
     int tRows = target->rows;
-    std::cout << tRows << std::endl;
+    //std::cout << tRows << std::endl;
     int dRows = data->rows;
-    std::cout << dRows << "is in 2\n";
+    //std::cout << dRows << "is in 2\n";
     int cols = data->cols;
     float * train = data->getMat();
     float * test = target->getMat();
@@ -105,28 +105,29 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 
     float * d_dist;
     const int block = 32;
-    err = cudaMalloc(&d_dist, sizeof(float) * block * tRows);
+    err = cudaMalloc(&d_dist, sizeof(float) * block * dRows);
     if(err != cudaSuccess){
         std::cout << "fuck you 5\n";
     }
 
-    std::cout << "is in 3\n";
+    //std::cout << "is in 3\n";
 
     int i = 0;
     dim3 numBlock(1, block);
-    std::cout << (tRows + block - 1) / block << "\n";
+    //std::cout << (tRows + block - 1) / block << "\n";
     dim3 numGrid(1, (dRows + block - 1) / block);
-    std::cout << "is in 4\n";
-       
+    //std::cout << "is in 4\n";
+         
     for(; i < tRows - block; i += block){
         //std::cout << i << " " << tRows << " " << cols << " " << dRows << "\n";
         compute_dist<<<numGrid, numBlock, 2 * block * cols>>>(d_train, d_test, d_dist, i, dRows, cols);
-        cudaMemcpy(dist + i * dRows, d_dist, sizeof(float) * block * dRows, cudaMemcpyDeviceToHost);
+        cudaMemcpy(dist, d_dist, sizeof(float) * block * dRows, cudaMemcpyDeviceToHost);
     }
+    
 
     //cudaMemcpy(dist, d_dist, sizeof(float) * tRows * dRows, cudaMemcpyDeviceToHost);
 
-    std::cout << "is in\n";
+    //std::cout << "is in\n";
 
     for(;i < tRows;++i){
         for(int j = 0;j < dRows; ++j){
@@ -138,7 +139,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
             dist[i * dRows + j] = sum;
         }
     }
-    //print(dist, tRows, dRows);
+    print(dist, tRows, dRows);
 
 	//std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
     std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
@@ -203,7 +204,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //copy expected labels:
     for (int i = 0; i < tRows; i++)
         results->label(i) = target->label(i);
-    std::cout << "Average intrinsic time: " << static_cast<double>(totalCompute) / computeTimes  / 1000 << "s.\n";
+    //std::cout << "Average intrinsic time: " << static_cast<double>(totalCompute) / computeTimes  / 1000 << "s.\n";
     free(dist);
     free(idx);
     return KNNResults(results);

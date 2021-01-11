@@ -17,19 +17,19 @@ void runKnn(char *trainFile, char *testFile, int k) {
 	DatasetPointer test = ReadDataset::read(testFile, nLabels);
 
 	MatrixPointer meanData = MeanNormalize(train);
-    std::cout << "is fuck in\n";
+    //std::cout << "is fuck in\n";
 	KNN knn(train);
-    std::cout << "is fuck in 2\n";
+    //std::cout << "is fuck in 2\n";
 
 	ApplyMeanNormalization(test, meanData);
 
-    std::cout << "is fuck in 3\n";
+    //std::cout << "is fuck in 3\n";
 	KNNResults rawResults = knn.run(k, test);
-	cout << "Consolidating results";
+	//cout << "Consolidating results";
 	SingleExecutionResults top1 = rawResults.top1Result();
 	SingleExecutionResults top2 = rawResults.topXResult(2);
 	SingleExecutionResults top3 = rawResults.topXResult(3);
-
+    
 	printf("Success Rate: %lf, Rejection Rate: %lf\n", top1.successRate(), top1.rejectionRate());
 	printf("Top 2 Success Rate: %lf\n", top2.successRate());
 	printf("Top 3 Success Rate: %lf\n", top3.successRate());
@@ -44,6 +44,7 @@ void runKnn(char *trainFile, char *testFile, int k) {
 		}
 		printf("\n");
 	}
+    
 }
 
 void findBestK(char *trainFile) {
