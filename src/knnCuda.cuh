@@ -43,7 +43,7 @@ class KNNCUDA {
 public:
 	KNNCUDA (DatasetPointer train) { this->data = train; }
 
-	KNNResults run(int k, DatasetPointer target);
+	KNNResults run(int k, DatasetPointer target, int b_s);
 	// KNNResults runCuda(int k, DatasetPointer target);
 
 private:

@@ -19,6 +19,7 @@ SingleExecutionResults KNNResults::top1Result(){
 		else if((int)pred->pos(currentExample,0) == results->label(currentExample))
 			nSuccess++;
 	}
+	// printf("nRejected = %d, nScucess = %d, results->rows %d\n", nRejected,nSuccess,results->rows);
 
 	return SingleExecutionResults(results->rows, nSuccess, nRejected);
 }
@@ -56,6 +57,7 @@ MatrixPointer KNNResults::getPredictions() {
 		for(size_t j = 0; j < results->cols; j++) {
 			double currentProbability = results->pos(currentExample, j);
 			if (currentProbability > maxProbability) {
+				// printf("currentProbability = %.3f\n",currentProbability);
 				maxIndex = j;
 				maxProbability = currentProbability;
 				rejecting = false;

@@ -4,12 +4,9 @@
 #include "dataset.h"
 #include <iostream>
 #include "debug.h"
-// #include <thrust/device_vector.h>
-// #include <thrust/host_vector.h>
-// #include <cuda_runtime.h>
-// #include <cuda.h>
 #include <cstdio>
 #include <cstdlib>
+#include <chrono> 
 
 using namespace std;
 
@@ -27,13 +24,22 @@ double GetSquaredDistance(DatasetPointer train, size_t trainExample, DatasetPoin
 
 KNNResults KNN::run(int k, DatasetPointer target) {
 
+	double copyTime = 0.0;
+    double sortTime = 0.0;
+    double processTime = 0.0;
 
+    std::chrono::steady_clock::time_point p_0 = std::chrono::steady_clock::now();
+    
 	DatasetPointer results(new dataset_base(target->rows,target->numLabels, target->numLabels));
 	results->clear();
 
 	//squaredDistances: first is the distance; second is the trainExample row
 	std::pair<double, int> squaredDistances[data->rows];
-	
+	double total = 0.0;
+	std::chrono::steady_clock::time_point p_1 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> p_t = p_1 - p_0;
+    processTime+=p_t.count();
+
 	for(size_t targetExample = 0; targetExample < target->rows; targetExample++) {
 
 // #ifdef DEBUG_KNN
@@ -41,27 +47,24 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 // 				DEBUGKNN("Target %lu of %lu\n", targetExample, target->rows);
 // #endif
 		//Find distance to all examples in the training set
+		std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 		for (size_t trainExample = 0; trainExample < data->rows; trainExample++) {
 				squaredDistances[trainExample].first = GetSquaredDistance(data, trainExample, target, targetExample);
 				squaredDistances[trainExample].second = trainExample;
-				// if( targetExample == 3  ){
-                // // printf("start_b %d, num_b %d, start_t %d, num_t %d\n",start_b, num_b, start_t, num_t);
-                // 	printf("CalDistance target(%d) ,train(%d) = %f \n",targetExample,trainExample, squaredDistances[trainExample].first);
+			}
+		std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+		std::chrono::duration<double> dt = t1 - t0;
+		total += (double)dt.count();
 
-            	// }
-				// if( squaredDistances[trainExample].first == 0)
-				// 	printf("CalDistance target(%d) ,train(%d) = %f \n",targetExample,trainExample, squaredDistances[trainExample].first);
-		}
-		// for (int j = 0; j < 1; j++){
-        //     printf("squaredDistances target(%d) ,train(%d) = %f (%d) \n",targetExample,j, squaredDistances[j].first, squaredDistances[j].second);
-        // }
-		// for (int j = 0; j < 1; j++){
-        //     printf("squaredDistances target(%d) ,train(%d) = %f\n",targetExample,j, squaredDistances[j].first, squaredDistances[j].second);
-        // }
-		//sort by closest distance
+		std::chrono::steady_clock::time_point t_sort1 = std::chrono::steady_clock::now();
+
 		sort(squaredDistances, squaredDistances + data->rows);
-		
+		std::chrono::steady_clock::time_point t_sort0 = std::chrono::steady_clock::now();
+        std::chrono::duration<double> t_sort = t_sort0 - t_sort1;
+        sortTime += t_sort.count();
+
 		//count classes of nearest neighbors
+		p_0 = std::chrono::steady_clock::now();
 		size_t nClasses = target->numLabels;
 		int countClosestClasses[nClasses];
 		for(size_t i = 0; i< nClasses; i++)
@@ -81,12 +84,23 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 			
         	// printf("target %d = %d \n", targetExample, results->pos(targetExample, i));
 		}
+		p_1 = std::chrono::steady_clock::now();
+        p_t = p_1 - p_0;
+        processTime += p_t.count();
 	}
-
+	
+    p_0 = std::chrono::steady_clock::now();
 	//copy expected labels:
 	for (size_t i = 0; i < target->rows; i++){
 		results->label(i) = target->label(i);
 	}
+	p_1 = std::chrono::steady_clock::now();
+	p_t = p_1 - p_0;
+	processTime += p_t.count();
+
+	printf("CalDistance Time %lfs\n", total);
+    printf("Sort took %lfs\n", sortTime); 
+    printf("Other Process took %lfs\n", processTime); 
 
 	return KNNResults(results);
 }

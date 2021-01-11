@@ -81,7 +81,12 @@ __global__ void CalDistance(int dataCol, int dataRow, int e_t, int e_b, int r_t,
 
 
 
-KNNResults KNNCUDA::run(int k, DatasetPointer target) {
+KNNResults KNNCUDA::run(int k, DatasetPointer target, int b_s) {
+    double copyTime = 0.0;
+    double sortTime = 0.0;
+    double processTime = 0.0;
+
+    std::chrono::steady_clock::time_point p_0 = std::chrono::steady_clock::now();
     
 	DatasetPointer results(new dataset_base(target->rows,target->numLabels, target->numLabels));
 	results->clear();
@@ -111,7 +116,7 @@ KNNResults KNNCUDA::run(int k, DatasetPointer target) {
 
     // thread limit 1024
     // block limit 65535
-    int block_size = 10000;
+    int block_size = b_s;
     int thread_size = 1024;
 
     
@@ -152,60 +157,42 @@ KNNResults KNNCUDA::run(int k, DatasetPointer target) {
     
 	double *d_sd_dist;
     int *d_sd_example;
+    std::chrono::steady_clock::time_point p_1 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> p_t = p_1 - p_0;
+    processTime+=p_t.count();
     
     
     
     cudaSetDevice(0);
 
-    // cudaMalloc((void **)&e_b,  sizeof(int));
-    // cudaMalloc((void **)&e_t,  sizeof(int));
-    // cudaMalloc((void **)&r_b,  sizeof(int));
-    // cudaMalloc((void **)&r_t,  sizeof(int));
-
-    // cudaMalloc((void **)&d_data_cols,  sizeof(int));
-    // cudaMalloc((void **)&d_data_rows,  sizeof(int));
     cudaMalloc(&d_data_pos,  data_cols * data_rows * sizeof(double));
     cudaMalloc(&d_target_pos,  data_cols * target_rows * sizeof(double));
     cudaMalloc(&d_sd_dist,  data_rows * target_rows *  sizeof(double));
     cudaMalloc(&d_sd_example,  data_rows * target_rows * sizeof(int));
-    
-    // cudaMemcpy(e_b, &ele_per_blocks, sizeof(int), cudaMemcpyHostToDevice);
-    // cudaMemcpy(e_t, &ele_per_threads, sizeof(int), cudaMemcpyHostToDevice);
-    // cudaMemcpy(r_b, &res_block, sizeof(int), cudaMemcpyHostToDevice);
-    // cudaMemcpy(r_t, &res_thread, sizeof(int), cudaMemcpyHostToDevice);
 
-    // cudaMemcpy(d_data_cols, &data_cols, sizeof(int), cudaMemcpyHostToDevice);
-    // cudaMemcpy(d_data_rows, &data_rows, sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_data_pos, data_pos,  data_cols * data_rows * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_target_pos, target_pos,  data_cols * target_rows * sizeof(double), cudaMemcpyHostToDevice);
     
-    // cudaMemcpy(d_sd_dist, 0,  data_rows * sizeof(double), cudaMemcpyHostToDevice);
-    // cudaMemcpy(d_sd_example, 0,  data_rows * sizeof(int), cudaMemcpyHostToDevice);
-    
 
-    // std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
-
+    std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
 	CalDistance<<<block_size, thread_size>>>(data_cols, data_rows, ele_per_threads, ele_per_blocks, res_thread, res_block, d_data_pos, d_target_pos, d_sd_dist, d_sd_example);
-
-    // std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-    // std::chrono::duration<double> dt = t1 - t0;
-    // printf("CalDistance took %gs\n", dt.count()); 
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> dt = t1 - t0;
+    printf("CalDistance Time %gs (%lfs)\n", dt.count(), dt.count()); 
 
 	cudaMemcpy(squaredDistances_first , d_sd_dist, data_rows * target_rows * sizeof(double), cudaMemcpyDeviceToHost);
 	cudaMemcpy(squaredDistances_second , d_sd_example, data_rows * target_rows * sizeof(int), cudaMemcpyDeviceToHost);
-    
-    // cudaFree(d_data_cols);
-    // cudaFree(d_data_rows);
+
     cudaFree(d_data_pos);
     cudaFree(d_target_pos);
     cudaFree(d_sd_dist);
     cudaFree(d_sd_example);
     
-    // t0 = std::chrono::steady_clock::now();
+
     #pragma omp parallel for shared(data, squaredDistances)
 	for(size_t targetExample = 0; targetExample < target->rows; targetExample++) {
 
-        // std::chrono::steady_clock::time_point t_cpy1 = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point t_cpy1 = std::chrono::steady_clock::now();
         #pragma unroll
         for (int j = 0; j < data->rows; j++){
             int idx = squaredDistances_second[targetExample *data->rows + j];
@@ -213,19 +200,21 @@ KNNResults KNNCUDA::run(int k, DatasetPointer target) {
             squaredDistances[squaredDistances_second[idx]].second = idx;
             
         }
-        // std::chrono::steady_clock::time_point t_cpy0 = std::chrono::steady_clock::now();
-        // std::chrono::duration<double> t_cpy = t_cpy0 - t_cpy1;
-        // printf("Copy took %gs\n", t_cpy.count()); 
+        std::chrono::steady_clock::time_point t_cpy0 = std::chrono::steady_clock::now();
+        std::chrono::duration<double> t_cpy = t_cpy0 - t_cpy1;
+        copyTime += t_cpy.count(); 
 
 		//sort by closest distance
-        // std::chrono::steady_clock::time_point t_sort1 = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point t_sort1 = std::chrono::steady_clock::now();
 
         // sort(squaredDistances, squaredDistances + data->rows);
         partial_sort(squaredDistances, squaredDistances + k, squaredDistances + data->rows);
-        // std::chrono::steady_clock::time_point t_sort0 = std::chrono::steady_clock::now();
-        // std::chrono::duration<double> t_sort = t_sort0 - t_sort1;
-        // printf("Copy took %gs\n", t_sort.count()); 
+        std::chrono::steady_clock::time_point t_sort0 = std::chrono::steady_clock::now();
+        std::chrono::duration<double> t_sort = t_sort0 - t_sort1;
+        sortTime += t_sort.count();
+        
 
+        p_0 = std::chrono::steady_clock::now();
 		//count classes of nearest neighbors
 		size_t nClasses = target->numLabels;
 		int countClosestClasses[nClasses];
@@ -244,18 +233,27 @@ KNNResults KNNCUDA::run(int k, DatasetPointer target) {
 		{
             results->pos(targetExample, i) = ((double)countClosestClasses[i]) / k;
         }
+        p_1 = std::chrono::steady_clock::now();
+        p_t = p_1 - p_0;
+        processTime += p_t.count();
         
     }
-    // t1 = std::chrono::steady_clock::now();
-    // dt = t1 - t0;
-    // printf("sort and findresult took %gs\n", dt.count()); 
 
     //copy expected labels:
+    p_0 = std::chrono::steady_clock::now();
     #pragma omp parallel for nowait
 	for (size_t i = 0; i < target->rows; i++){
 		results->label(i) = target->label(i);
     }
+    p_1 = std::chrono::steady_clock::now();
+    p_t = p_1 - p_0;
+    processTime += p_t.count();
    
+    
+    printf("Sort took %lfs\n", sortTime); 
+    printf("Other Process took %lfs\n", processTime); 
+
+    printf("Copy took %lfs\n", copyTime);
 
     free(squaredDistances_first);
     free(squaredDistances_second);
