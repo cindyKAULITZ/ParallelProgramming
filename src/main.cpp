@@ -5,12 +5,14 @@
 #include "Preprocessing.h"
 #include <new>
 #include <cstring>
+#include <chrono>
 
 using namespace std;
 
 const int nLabels = 10;
 
 void runKnn(char *trainFile, char *testFile, int k) {
+    chrono::steady_clock::time_point b = chrono::steady_clock::now();
 	cout << "Reading train" <<endl;
 	DatasetPointer train = ReadDataset::read(trainFile, nLabels);
 	cout << "Reading test" <<endl;
@@ -22,6 +24,9 @@ void runKnn(char *trainFile, char *testFile, int k) {
 
 	ApplyMeanNormalization(test, meanData);
 
+    chrono::steady_clock::time_point e = chrono::steady_clock::now();
+    cout << "Pre-Processing time: " << static_cast<double>(chrono::duration_cast<chrono::milliseconds>(e - b).count()) / 1000
+        << "s.\n";
 	KNNResults rawResults = knn.run(k, test);
 	cout << "Consolidating results";
 	SingleExecutionResults top1 = rawResults.top1Result();
@@ -31,6 +36,7 @@ void runKnn(char *trainFile, char *testFile, int k) {
 	printf("Success Rate: %lf, Rejection Rate: %lf\n", top1.successRate(), top1.rejectionRate());
 	printf("Top 2 Success Rate: %lf\n", top2.successRate());
 	printf("Top 3 Success Rate: %lf\n", top3.successRate());
+    /*
 	printf("Confusion matrix:\n");
 
 	MatrixPointer confusionMatrix = rawResults.getConfusionMatrix();
@@ -42,6 +48,7 @@ void runKnn(char *trainFile, char *testFile, int k) {
 		}
 		printf("\n");
 	}
+    */
 }
 
 void findBestK(char *trainFile) {

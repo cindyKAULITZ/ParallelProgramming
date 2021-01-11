@@ -27,7 +27,7 @@ static int tRows;
 static int dRows;
 static int cols;
 
-int chunck = 1;
+int chunck = 256;
 
 std::mutex mu1;
 
