@@ -17,13 +17,13 @@ int computeTimes = 0;
 
 extern __shared__ float sm[];
 
-__global__ void compute_dist(float * train, float * target, float * dist, int train_idx, int test_end, int cols, int trainRows){
+__global__ void compute_dist(float * train, float * target, float * dist, int test_idx, int train_end, int cols){
     //float * train_sm = sm;
     //float * test_sm = sm + cols * blockDim.y;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int train_y = train_idx + threadIdx.y;
+    int test_y = test_idx + threadIdx.y;
     int block_y = blockDim.y;
-    if(y < test_end){
+    if(y < train_end){
         /*    
         for(int i = 0;i < cols;++i){
             train_sm[threadIdx.y * cols + i] = train[train_y * cols + i];
@@ -34,10 +34,10 @@ __global__ void compute_dist(float * train, float * target, float * dist, int tr
         for(int i = 0; i < blockDim.y; ++ i){
             float sum = 0.0;
             for(int j = 0;j < cols;++j){
-                float t0 = train[(train_idx + i) * cols + j] - target[y * cols + j];
+                float t0 = train[(y) * cols + j] - target[(test_idx + i) * cols + j];
                 sum += t0 * t0;
             }
-            dist[y * trainRows + (train_idx + i)] = sum;
+            dist[i * train_end + y] = sum;
         }
         
 
@@ -88,26 +88,26 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     cudaError_t err;
     err = cudaMalloc(&d_train, sizeof(float) * dRows * cols);
     if(err != cudaSuccess){
-        std::cout << "fuck you\n";
+        std::cout << "fuck you 1\n";
     }
     err = cudaMalloc(&d_test, sizeof(float) * tRows * cols);
     if(err != cudaSuccess){
-        std::cout << "fuck you\n";
+        std::cout << "fuck you 2\n";
     }
     err = cudaMemcpy(d_train, train, sizeof(float) * dRows * cols, cudaMemcpyHostToDevice);
     if(err != cudaSuccess){
-        std::cout << "fuck you\n";
+        std::cout << "fuck you 3\n";
     }
     err = cudaMemcpy(d_test, test, sizeof(float) * tRows * cols, cudaMemcpyHostToDevice);
     if(err != cudaSuccess){
-        std::cout << "fuck you\n";
+        std::cout << "fuck you 4\n";
     }
 
     float * d_dist;
     const int block = 32;
-    err = cudaMalloc(&d_dist, sizeof(float) * tRows * dRows);
+    err = cudaMalloc(&d_dist, sizeof(float) * block * tRows);
     if(err != cudaSuccess){
-        std::cout << "fuck you\n";
+        std::cout << "fuck you 5\n";
     }
 
     std::cout << "is in 3\n";
@@ -115,29 +115,30 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     int i = 0;
     dim3 numBlock(1, block);
     std::cout << (tRows + block - 1) / block << "\n";
-    dim3 numGrid(1, (tRows + block - 1) / block);
+    dim3 numGrid(1, (dRows + block - 1) / block);
     std::cout << "is in 4\n";
        
-    for(; i < dRows - block; i += block){
-        std::cout << i << " " << tRows << " " << cols << " " << dRows << "\n";
-        compute_dist<<<numGrid, numBlock, 2 * block * cols>>>(d_train, d_test, d_dist, i, tRows, cols, dRows);
+    for(; i < tRows - block; i += block){
+        //std::cout << i << " " << tRows << " " << cols << " " << dRows << "\n";
+        compute_dist<<<numGrid, numBlock, 2 * block * cols>>>(d_train, d_test, d_dist, i, dRows, cols);
+        cudaMemcpy(dist + i * dRows, d_dist, sizeof(float) * block * dRows, cudaMemcpyDeviceToHost);
     }
 
-    cudaMemcpy(dist, d_dist, sizeof(float) * tRows * dRows, cudaMemcpyDeviceToHost);
+    //cudaMemcpy(dist, d_dist, sizeof(float) * tRows * dRows, cudaMemcpyDeviceToHost);
 
     std::cout << "is in\n";
 
-    for(;i < dRows;++i){
-        for(int j = 0;j < tRows; ++j){
+    for(;i < tRows;++i){
+        for(int j = 0;j < dRows; ++j){
             float sum = 0.0;
             for(int k = 0;k < cols;++k){
-                float t0 = train[i * cols + k] - test[j * cols + k];
+                float t0 = train[j * cols + k] - test[i * cols + k];
                 sum += t0 * t0;
             }
-            dist[j * dRows + i] = sum;
+            dist[i * dRows + j] = sum;
         }
     }
-    print(dist, tRows, dRows);
+    //print(dist, tRows, dRows);
 
 	//std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
     std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
