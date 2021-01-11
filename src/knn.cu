@@ -121,7 +121,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     for(; i < tRows - block; i += block){
         //std::cout << i << " " << tRows << " " << cols << " " << dRows << "\n";
         compute_dist<<<numGrid, numBlock, 2 * block * cols>>>(d_train, d_test, d_dist, i, dRows, cols);
-        cudaMemcpy(dist, d_dist, sizeof(float) * block * dRows, cudaMemcpyDeviceToHost);
+        cudaMemcpy(dist + i * dRows, d_dist, sizeof(float) * block * dRows, cudaMemcpyDeviceToHost);
     }
     
 
@@ -139,7 +139,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
             dist[i * dRows + j] = sum;
         }
     }
-    print(dist, tRows, dRows);
+    //print(dist, tRows, dRows);
 
 	//std::pair<double, int> * squaredDistances = new std::pair<double, int>[tRows * dRows];
     std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
