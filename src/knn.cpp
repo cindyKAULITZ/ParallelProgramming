@@ -16,6 +16,7 @@
 int totalCompute = 0;
 int computeTimes = 0;
 int i = 0;
+int j;
 
 static double * train;
 static double * test;
@@ -25,11 +26,12 @@ static int tRows;
 static int dRows;
 static int cols;
 
-//int chunck = 256;
+int chunck = 1024;
 
 std::mutex mu1;
 
-void computeDist(int beg, int chunck){
+void computeDist(int beg){
+    /*
     int local_i = beg;
     for(; local_i < local_i + chunck && local_i < tRows; ++ local_i){
         for(int lj = 0; lj < dRows; ++lj){
@@ -41,9 +43,9 @@ void computeDist(int beg, int chunck){
             dist[local_i * dRows + lj] = sum;
         }
     }
-
-    /*
-    int local_i = beg;
+    */
+    
+    int local_i = 0, local_j = beg;
     while(local_i < tRows){
         //printf("%d\n", local_i);
         
@@ -66,7 +68,6 @@ void computeDist(int beg, int chunck){
         i += chunck;
         mu1.unlock();
     }
-    */
 }
 
 KNNResults KNN::run(int k, DatasetPointer target) {
@@ -96,6 +97,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 //#pragma omp parallel for schedule(static) num_threads(8)
         //for(unsigned long long trainTileBegin = 0; trainTileBegin < dRows; trainTileBegin += trainTileSize){
     std::thread pool[12];
+    /*
     int dataBegin[12];
     int sizeAry[12];
     int size = tRows / num_cores;
@@ -116,10 +118,13 @@ KNNResults KNN::run(int k, DatasetPointer target) {
         }
     }
     
-
-    i = num_cores < tRows ? num_cores : 0;
+    */
+    j = num_cores < tRows ? num_cores : 0;
+    if(j == 0){
+        i += 1;
+    }
     for(int i = 0;i < num_cores;++i){
-        pool[i] = std::thread(computeDist, dataBegin[i], sizeAry[i]);
+        pool[i] = std::thread(computeDist, i);
     }
     for(int i = 0;i < num_cores;++i){
         pool[i].join();
@@ -202,7 +207,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //copy expected labels:
     for (int i = 0; i < tRows; i++)
         results->label(i) = target->label(i);
-    std::cout << "Average intrinsic time: " << static_cast<double>(totalCompute) / computeTimes  / 1000 << "s.\n";
+    //std::cout << "Average intrinsic time: " << static_cast<double>(totalCompute) / computeTimes  / 1000 << "s.\n";
     free(dist);
     free(idx);
     return KNNResults(results);
