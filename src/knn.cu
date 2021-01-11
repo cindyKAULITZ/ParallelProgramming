@@ -37,10 +37,9 @@ __global__ void compute_dist(float * train, float * target, float * dist, int tr
                 float t0 = train[(train_idx + i) * cols + j] - target[y * cols + j];
                 sum += t0 * t0;
             }
-            dist[y * trainRows + train_y] = sum;
+            dist[y * trainRows + (train_idx + i)] = sum;
         }
         
-        //dist[y * trainRows + train_y] = 11.3;
 
     }
     
