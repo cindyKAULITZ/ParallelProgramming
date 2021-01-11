@@ -17,14 +17,14 @@ typedef std::shared_ptr<matrix_base> MatrixPointer;
 
 class matrix_base {
 private:
-	double *data;
+	float *data;
 public:
 	size_t rows;
 	size_t cols;
 
-	double& pos (size_t row, size_t col) {return data[row * cols + col]; }
+	float& pos (size_t row, size_t col) {return data[row * cols + col]; }
 
-    double * getMat(){ return data; }
+    float * getMat(){ return data; }
 
 	matrix_base(size_t rows, size_t cols);
 	virtual ~matrix_base();

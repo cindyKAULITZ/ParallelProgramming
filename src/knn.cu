@@ -9,39 +9,44 @@
 //#include <array>
 #include <chrono>
 #include <numeric>
+#include <cstdio>
 //#include <omp.h>
 
 int totalCompute = 0;
 int computeTimes = 0;
 
-__global__ void compute_dist(double * train, double * target, double * dist, int idx, int end, int rows, int trRows){
-    extern __shared__ double sm[];
-    double * train_sm = sm;
-    double * test_sm = sm + rows * blockDim.y;
+extern __shared__ float sm[];
+
+__global__ void compute_dist(float * train, float * target, float * dist, int train_idx, int test_end, int cols, int trainRows){
+    //float * train_sm = sm;
+    //float * test_sm = sm + cols * blockDim.y;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int train_y = idx + threadIdx.y;
-    if(train_y == 0 && y == 0){
-        printf("is in\n");
-    }
-    if(y < end){
-        for(int i = 0;i < rows;++i){
-            train_sm[threadIdx.y * rows + i] = train[train_y * rows + i];
-            test_sm[threadIdx.y * rows + i] = target[y * rows + i];
+    int train_y = train_idx + threadIdx.y;
+    int block_y = blockDim.y;
+    if(y < test_end){
+        /*    
+        for(int i = 0;i < cols;++i){
+            train_sm[threadIdx.y * cols + i] = train[train_y * cols + i];
+            test_sm[threadIdx.y * cols + i] = target[y * cols + i];
         }
         __syncthreads();
+        */
         for(int i = 0; i < blockDim.y; ++ i){
-            double sum = 0.0;
-            for(int j = 0;j < rows;++j){
-                double t0 = train_sm[i * rows + j] - test_sm[i * rows + j];
+            float sum = 0.0;
+            for(int j = 0;j < cols;++j){
+                float t0 = train[(train_idx + i) * cols + j] - target[y * cols + j];
                 sum += t0 * t0;
             }
-            dist[y * trRows + train_y] = 11.3;
+            dist[y * trainRows + train_y] = sum;
         }
+        
+        //dist[y * trainRows + train_y] = 11.3;
+
     }
-    dist[threadIdx.y] = 11.3;
+    
 }
 
-void print(double * data, int row, int col){
+void print(float * data, int row, int col){
     for(int i = 0;i < row;++i){
         for(int j = 0;j < col;++j){
             std::cout << data[i * col + j] << " ";
@@ -59,17 +64,18 @@ KNNResults KNN::run(int k, DatasetPointer target) {
 
 	//squaredDistances: first is the distance; second is the trainExample row
     int tRows = target->rows;
+    std::cout << tRows << std::endl;
     int dRows = data->rows;
+    std::cout << dRows << "is in 2\n";
     int cols = data->cols;
-    double * train = data->getMat();
-    double * test = target->getMat();
-    double * dist = (double *)malloc(sizeof(double) * tRows * dRows);
+    float * train = data->getMat();
+    float * test = target->getMat();
+    float * dist = (float *)malloc(sizeof(float) * tRows * dRows);
     long long * idx = (long long *)malloc(sizeof(long long) * tRows * dRows);
     for(long long t = 0;t < tRows;++t){
         std::iota(idx + t * dRows, idx + (t + 1) * dRows, 0);
     }
 
-    std::cout << "is in 2\n";
     int deviceID;
     cudaDeviceProp prop;
 	cudaGetDevice(&deviceID);
@@ -79,40 +85,54 @@ KNNResults KNN::run(int k, DatasetPointer target) {
         printf("!prop.deviceOverlap\n");
     }
 
-    double * d_train , * d_test;
-    cudaMalloc(&d_train, sizeof(double) * dRows * cols);
-    cudaMalloc(&d_test, sizeof(double) * tRows * cols);
-    cudaMemcpy(d_train, train, sizeof(double) * dRows * cols, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_test, test, sizeof(double) * tRows * cols, cudaMemcpyHostToDevice);
+    float * d_train , * d_test;
+    cudaError_t err;
+    err = cudaMalloc(&d_train, sizeof(float) * dRows * cols);
+    if(err != cudaSuccess){
+        std::cout << "fuck you\n";
+    }
+    err = cudaMalloc(&d_test, sizeof(float) * tRows * cols);
+    if(err != cudaSuccess){
+        std::cout << "fuck you\n";
+    }
+    err = cudaMemcpy(d_train, train, sizeof(float) * dRows * cols, cudaMemcpyHostToDevice);
+    if(err != cudaSuccess){
+        std::cout << "fuck you\n";
+    }
+    err = cudaMemcpy(d_test, test, sizeof(float) * tRows * cols, cudaMemcpyHostToDevice);
+    if(err != cudaSuccess){
+        std::cout << "fuck you\n";
+    }
 
-    double * d_dist;
-    const int block = 1024;
-    cudaMalloc(&d_dist, sizeof(double) * tRows * dRows);
+    float * d_dist;
+    const int block = 32;
+    err = cudaMalloc(&d_dist, sizeof(float) * tRows * dRows);
+    if(err != cudaSuccess){
+        std::cout << "fuck you\n";
+    }
 
     std::cout << "is in 3\n";
 
     int i = 0;
     dim3 numBlock(1, block);
+    std::cout << (tRows + block - 1) / block << "\n";
     dim3 numGrid(1, (tRows + block - 1) / block);
     std::cout << "is in 4\n";
        
     for(; i < dRows - block; i += block){
+        std::cout << i << " " << tRows << " " << cols << " " << dRows << "\n";
         compute_dist<<<numGrid, numBlock, 2 * block * cols>>>(d_train, d_test, d_dist, i, tRows, cols, dRows);
     }
-    
-    
 
-
-
-    cudaMemcpy(dist, d_dist, sizeof(double) * tRows * dRows, cudaMemcpyDeviceToHost);
+    cudaMemcpy(dist, d_dist, sizeof(float) * tRows * dRows, cudaMemcpyDeviceToHost);
 
     std::cout << "is in\n";
 
     for(;i < dRows;++i){
         for(int j = 0;j < tRows; ++j){
-            double sum = 0.0;
+            float sum = 0.0;
             for(int k = 0;k < cols;++k){
-                double t0 = train[i * cols + k] - test[j * cols + k];
+                float t0 = train[i * cols + k] - test[j * cols + k];
                 sum += t0 * t0;
             }
             dist[j * dRows + i] = sum;

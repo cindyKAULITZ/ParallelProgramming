@@ -17,11 +17,13 @@ void runKnn(char *trainFile, char *testFile, int k) {
 	DatasetPointer test = ReadDataset::read(testFile, nLabels);
 
 	MatrixPointer meanData = MeanNormalize(train);
-
+    std::cout << "is fuck in\n";
 	KNN knn(train);
+    std::cout << "is fuck in 2\n";
 
 	ApplyMeanNormalization(test, meanData);
 
+    std::cout << "is fuck in 3\n";
 	KNNResults rawResults = knn.run(k, test);
 	cout << "Consolidating results";
 	SingleExecutionResults top1 = rawResults.top1Result();
