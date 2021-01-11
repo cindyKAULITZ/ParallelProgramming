@@ -23,7 +23,7 @@ test: $(TESTTARGETS)
 
 # Main target
 $(EXEC): $(OBJECTS) $(CUOBJECTS)
-	g++ $(OBJECTS) $(CUOBJECTS)  -L/usr/local/cuda/lib64 -lcudart -o $(EXEC)
+	g++ $(OBJECTS) $(CUOBJECTS)  -L/usr/local/cuda/lib64 -lcudart -o $(EXEC) -fopenmp
 
 $(TESTTARGETS): bin/% : test/%.cpp $(TESTOBJECTS)
 	$(CC) $(CC_FLAGS) -o $@ $< $(TESTOBJECTS) -Isrc/

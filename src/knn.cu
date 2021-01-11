@@ -10,7 +10,7 @@
 #include <chrono>
 #include <numeric>
 #include <cstdio>
-//#include <omp.h>
+#include <omp.h>
 
 int totalCompute = 0;
 int computeTimes = 0;
@@ -130,8 +130,8 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //cudaMemcpy(dist, d_dist, sizeof(float) * tRows * dRows, cudaMemcpyDeviceToHost);
 
     //std::cout << "is in\n";
-    
     for(;i < tRows;++i){
+#pragma omp parallel for    
         for(int j = 0;j < dRows; ++j){
             float sum = 0.0;
             for(int k = 0;k < cols;++k){
