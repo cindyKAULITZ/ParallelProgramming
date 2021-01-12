@@ -116,7 +116,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     }
 
     float * d_dist;
-    const int block = 32;
+    int block = 32;
     err = cudaMalloc(&d_dist, sizeof(float) * block * dRows);
     if(err != cudaSuccess){
         std::cout << "fuck you 5\n";
@@ -140,6 +140,12 @@ KNNResults KNN::run(int k, DatasetPointer target) {
     //cudaMemcpy(dist, d_dist, sizeof(float) * tRows * dRows, cudaMemcpyDeviceToHost);
 
     //std::cout << "is in\n";
+    block = tRows - i;
+    numBlock.y = block;
+    numGrid.y = (dRows + block - 1) / block;
+    compute_dist<<<numGrid, numBlock, 2 * block * cols * sizeof(float)>>>(d_train, d_test, d_dist, i, dRows, cols, tRows);
+    cudaMemcpy(dist + i * dRows, d_dist, sizeof(float) * block * dRows, cudaMemcpyDeviceToHost);
+    /*
     for(;i < tRows;++i){
 #pragma omp parallel for    
         for(int j = 0;j < dRows; ++j){
@@ -151,6 +157,7 @@ KNNResults KNN::run(int k, DatasetPointer target) {
             dist[i * dRows + j] = sum;
         }
     }
+    */
     
     //print(dist, tRows, dRows);
 
