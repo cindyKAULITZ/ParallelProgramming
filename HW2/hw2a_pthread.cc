@@ -30,11 +30,9 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 void *mandelbrot_set(void *sub){
-    // int* start = (int*) sub;
-	// int* end = (int*) sub+1;
-    
     /* mandelbrot set */
     while(j_count < height) {
+
         pthread_mutex_lock(&mutex);
         int j = j_count;
         j_count++;
@@ -125,10 +123,10 @@ int main(int argc, char** argv) {
 
     y0_term = ((upper - lower) / height);
     x0_term = ((right - left) / width);
+    // int ncpus = 60;
 
     /* create threads */
-    // int ncpus = CPU_COUNT(&cpu_set);
-    int ncpus = 80;
+    int ncpus = CPU_COUNT(&cpu_set);
 	pthread_t t[ncpus]; 
     
     for (int i = 0 ; i <ncpus; i++){

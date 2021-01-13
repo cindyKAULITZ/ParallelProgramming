@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
     /* detect how many CPUs are available */
     cpu_set_t cpu_set;
     sched_getaffinity(0, sizeof(cpu_set), &cpu_set);
-    printf("%d cpus available\n", CPU_COUNT(&cpu_set));
+    // printf("%d cpus available\n", CPU_COUNT(&cpu_set));
 
     /* argument parsing */
     assert(argc == 9);
@@ -87,9 +87,14 @@ int main(int argc, char** argv) {
                 ++repeats;
             }
             image[j * width + i] = repeats;
+            // printf("%d\n",image[j * width + i]);
         }
     }
-
+    for(int j =0;j < height;j++){
+        for(int i = 0; i < width; i++){
+            printf("%d\n",image[j * width + i]);
+        }
+    }
     /* draw and cleanup */
     write_png(filename, iters, width, height, image);
     free(image);
